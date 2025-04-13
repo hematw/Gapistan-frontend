@@ -1,11 +1,12 @@
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Listbox, ListboxItem } from "@heroui/listbox";
 import { Navbar, NavbarBrand } from "@heroui/navbar";
-import {Card, CardBody, CardHeader} from "@heroui/card";
+import { Card, CardBody, CardHeader } from "@heroui/card";
 import React from "react";
 import { Badge } from "@heroui/badge";
+import Conversation from "./components/Conversation";
+import Sidebar from "./components/Sidebar";
 
 const conversations = [
   {
@@ -139,91 +140,71 @@ const messages = [
 ];
 
 function ICGChat() {
-
   return (
-    <div className="chat-app">
-      {/* Navbar */}
-      <Navbar>
-        <NavbarBrand>
-          <span className="font-bold text-xl">ICG Chat</span>
-        </NavbarBrand>
-      </Navbar>
-
-      <div className="flex h-screen">
-        {/* Left sidebar - Conversations */}
-        <div className="w-72 border-r">
-          <Listbox>
-            {conversations.map((conv) => (
-              <ListboxItem key={conv.id}>
-                <div className="flex items-center p-2 hover:bg-gray-100">
-                  <Avatar name={conv.name} size="sm" />
-                  <div className="ml-3">
-                    <p className="font-medium">{conv.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {conv.isYou ? "You: " : ""}
-                      {conv.lastMessage}
-                    </p>
-                  </div>
-                  {conv.unread && (
-                    <Badge color="primary" size="xs" className="ml-auto" />
-                  )}
-                </div>
-              </ListboxItem>
-            ))}
-          </Listbox>
+    <div className="flex max-h-full">
+      <div className="w-96 border-r flex">
+        <Sidebar />
+        <div className="space-y-3 max-h-full overflow-auto px-4 ">
+          {conversations.map((conv, index) => (
+            <Conversation
+              key={index}
+              name={conv.name}
+              isYou={conv.isYou}
+              unread={conv.unread}
+              lastMessage={conv.lastMessage}
+            />
+          ))}
         </div>
+      </div>
 
-        {/* Main chat area */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 p-4 overflow-y-auto">
-            {/* Messages would be rendered here */}
-            <div className="space-y-4">
-              {/* Example message */}
-              <div className="flex items-start">
-                <Avatar name="Conner Garcia" size="sm" />
-                <div className="ml-3">
-                  <div className="flex items-center">
-                    <span className="font-medium">Conner Garcia</span>
-                    <span className="text-xs text-gray-500 ml-2">6:00 PM</span>
-                  </div>
-                  <p className="mt-1">
-                    Hey guys! Don't forget about our meeting next week!
-                  </p>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 p-4 overflow-y-auto">
+          {/* Messages would be rendered here */}
+          <div className="space-y-4">
+            {/* Example message */}
+            <div className="flex items-start">
+              <Avatar name="Conner Garcia" size="sm" />
+              <div className="ml-3">
+                <div className="flex items-center">
+                  <span className="font-medium">Conner Garcia</span>
+                  <span className="text-xs text-gray-500 ml-2">6:00 PM</span>
                 </div>
+                <p className="mt-1">
+                  Hey guys! Don't forget about our meeting next week!
+                </p>
               </div>
             </div>
           </div>
-
-          {/* Message input */}
-          <div className="p-4 border-t">
-            <div className="flex">
-              <Input placeholder="Write a message..." className="flex-1" />
-              <Button color="danger" className="ml-2">
-                Send
-              </Button>
-            </div>
-          </div>
         </div>
 
-        {/* Right sidebar - Members */}
-        <div className="w-64 border-l p-4">
-          <Card>
-            <CardHeader>
-              <h3 className="font-bold">Members</h3>
-            </CardHeader>
-            <CardBody>
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center py-2">
-                  {/* <User
+        <div className="p-4 border-t">
+          <div className="flex">
+            <Input placeholder="Write a message..." className="flex-1" />
+            <Button color="danger" className="ml-2">
+              Send
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-72 border-l p-4">
+        <Card>
+          <CardHeader>
+            <h3 className="font-bold">Members</h3>
+          </CardHeader>
+          <CardBody>
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center py-2">
+                {/* <User
                     name={member.name}
                     description={member.status}
                     avatarProps={{ size: "sm" }}
-                  /> */}{member.name}
-                </div>
-              ))}
-            </CardBody>
-          </Card>
-        </div>
+                  /> */}
+                {member.name}
+              </div>
+            ))}
+          </CardBody>
+        </Card>
       </div>
     </div>
   );

@@ -19,6 +19,11 @@ export default {
                 DEFAULT: '0 2px 4px var(--tw-shadow-color)',
                 lg: '0 8px 16px var(--tw-shadow-color)'
             },
+            colors: {
+                limegreen: "#bcff9d",
+                dark: "#272727",
+                "dark-2": "#343434",
+            }
         }
     },
     plugins: [plugin(function ({ matchUtilities, theme }) {
@@ -31,5 +36,3 @@ export default {
         )
     }), require("tailwindcss-animate"), heroui()],
 }
-
-// #EEEEEE #D84040 #8E1616 #1D1616

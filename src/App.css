@@ -1,0 +1,22 @@
+/* Base styles (light mode as default) */
+body {
+  background-color: #ffffff;
+  color: #111111;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Dark mode styles */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #111111;
+    color: #ffffff;
+  }
+}
+
+body {
+  font-family: "Poppins", sans-serif;
+}
+
+:-webkit-scrollbar-track{
+    @apply text-limegreen
+}
