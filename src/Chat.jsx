@@ -7,6 +7,8 @@ import React from "react";
 import { Badge } from "@heroui/badge";
 import Conversation from "./components/Conversation";
 import Sidebar from "./components/Sidebar";
+import { User } from "@heroui/user";
+import { PhoneCall, Pin, Send, Users, Video } from "lucide-react";
 
 const conversations = [
   {
@@ -141,72 +143,109 @@ const messages = [
 
 function ICGChat() {
   return (
-    <div className="flex max-h-full">
-      <div className="w-96 border-r flex">
-        <Sidebar />
-        <div className="space-y-3 max-h-full overflow-auto px-4 ">
-          {conversations.map((conv, index) => (
-            <Conversation
-              key={index}
-              name={conv.name}
-              isYou={conv.isYou}
-              unread={conv.unread}
-              lastMessage={conv.lastMessage}
-            />
-          ))}
+    <>
+      <div className="w-full h-screen overflow-auto p-4 flex gap-4">
+        <div className="w-96 flex">
+          <Sidebar />
+          <div className="space-y-3 max-h-full overflow-auto px-4 ">
+            {conversations.map((conv, index) => (
+              <Conversation
+                key={index}
+                name={conv.name}
+                isYou={conv.isYou}
+                unread={conv.unread}
+                lastMessage={conv.lastMessage}
+              />
+            ))}
+          </div>
         </div>
-      </div>
 
-      <div className="h-full flex flex-col">
-        <div className="flex-1 p-4 overflow-y-auto">
-          {/* Messages would be rendered here */}
-          <div className="space-y-4">
-            {/* Example message */}
-            <div className="flex items-start">
-              <Avatar name="Conner Garcia" size="sm" />
-              <div className="ml-3">
-                <div className="flex items-center">
-                  <span className="font-medium">Conner Garcia</span>
-                  <span className="text-xs text-gray-500 ml-2">6:00 PM</span>
+        <div className="min-h-full flex flex-col bg-dark rounded-2xl grow">
+          <div className="flex-1 p-4 overflow-y-auto h-full">
+            {/* Messages would be rendered here */}
+            <div className="space-y-4">
+              {/* Example message */}
+              {messages.map((message, index) => (
+                <div className="flex items-start" key={index}>
+                  <Avatar
+                    name="Conner Garcia"
+                    size="sm"
+                    src="https://100k-faces.glitch.me/random-image"
+                  />
+                  <div className="ml-3">
+                    <div className="flex items-center">
+                      <span className="font-medium">
+                        {message.chats[0].sender}
+                      </span>
+                      <span className="text-xs text-gray-500 ml-2">
+                        {message.date}
+                      </span>
+                    </div>
+                    <p className="mt-1">{message.chats[0].text}</p>
+                  </div>
                 </div>
-                <p className="mt-1">
-                  Hey guys! Don't forget about our meeting next week!
-                </p>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-4 border-t">
+            <div className="flex">
+              <Input placeholder="Write a message..." variant="flat" />
+              <Button className="ml-2 bg-limegreen" startContent={<Send />} isIconOnly />
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-t">
-          <div className="flex">
-            <Input placeholder="Write a message..." className="flex-1" />
-            <Button color="danger" className="ml-2">
-              Send
-            </Button>
-          </div>
+        <div className="w-72 space-y-4">
+          <Card className="bg-dark flex ">
+            <CardBody className="flex flex-row justify-between">
+              <Button
+                isIconOnly
+                radius="full"
+                startContent={<PhoneCall />}
+                className="bg-limegreen"
+              />
+              <Button
+                isIconOnly
+                radius="full"
+                startContent={<Video />}
+                className="bg-dark-2 text-white"
+              />
+              <Button
+                isIconOnly
+                radius="full"
+                startContent={<Pin />}
+                className="bg-dark-2 text-white"
+              />
+              <Button
+                isIconOnly
+                radius="full"
+                startContent={<Users />}
+                className="bg-dark-2 text-white"
+              />
+            </CardBody>
+          </Card>
+          <Card className="bg-dark text-white">
+            <CardHeader>
+              <h3 className="font-bold">Members</h3>
+            </CardHeader>
+            <CardBody>
+              {members.map((member) => (
+                <User
+                  className="justify-stretch py-1"
+                  avatarProps={{
+                    src: "https://i.pravatar.cc/150?u=a04258114e29026702d",
+                  }}
+                  name={member.name}
+                />
+              ))}
+            </CardBody>
+          </Card>
+
+          <Card className="bg-dark mt-4"></Card>
         </div>
       </div>
-
-      <div className="w-72 border-l p-4">
-        <Card>
-          <CardHeader>
-            <h3 className="font-bold">Members</h3>
-          </CardHeader>
-          <CardBody>
-            {members.map((member) => (
-              <div key={member.id} className="flex items-center py-2">
-                {/* <User
-                    name={member.name}
-                    description={member.status}
-                    avatarProps={{ size: "sm" }}
-                  /> */}
-                {member.name}
-              </div>
-            ))}
-          </CardBody>
-        </Card>
-      </div>
-    </div>
+    </>
   );
 }
 

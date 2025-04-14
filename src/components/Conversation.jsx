@@ -13,7 +13,7 @@ function Conversation({ name, isYou, lastMessage, unread }) {
           shape="circle"
         >
           <Avatar
-            src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+            src="https://100k-faces.glitch.me/random-image"
             name={name}
             size="md"
           />

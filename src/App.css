@@ -17,6 +17,29 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
-:-webkit-scrollbar-track{
-    @apply text-limegreen
-}
+/* For modern browsers */
+::-webkit-scrollbar {
+    width: 10px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #363636; /* Light background for contrast */
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #bcff9d;
+    border-radius: 10px;
+    border: 2px solid #363636; /* For a soft inner border */
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #a6f07c; /* Slightly darker on hover */
+  }
+  
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #bcff9d #363636;
+  }
+  

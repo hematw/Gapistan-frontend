@@ -46,7 +46,7 @@ function App() {
   // }, []);
 
   return (
-    <div className="w-full h-screen overflow-auto p-4 flex items-center justify-center">
+    <>
       {/* <div className="text-center">
         <h1 className="text-red-400 text-5xl font-semibold">Hello World!</h1>
         <button onClick={sendMessage}>Send Message</button>
@@ -59,7 +59,7 @@ function App() {
         </p>
       </div> */}
       <ICGChat/>
-    </div>
+    </>
   );
 }
 
