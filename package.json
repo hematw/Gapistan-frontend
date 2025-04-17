@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@heroui/accordion": "^2.2.14",
     "@heroui/autocomplete": "^2.3.14",
     "@heroui/avatar": "^2.2.10",
     "@heroui/badge": "^2.2.10",

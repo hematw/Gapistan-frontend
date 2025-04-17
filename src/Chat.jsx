@@ -3,12 +3,14 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Navbar, NavbarBrand } from "@heroui/navbar";
 import { Card, CardBody, CardHeader } from "@heroui/card";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Badge } from "@heroui/badge";
 import Conversation from "./components/Conversation";
 import Sidebar from "./components/Sidebar";
 import { User } from "@heroui/user";
 import { PhoneCall, Pin, Send, Users, Video } from "lucide-react";
+import { useSocket } from "./contexts/SocketContext";
+import { Accordion, AccordionItem } from "@heroui/accordion";
 
 const conversations = [
   {
@@ -122,7 +124,7 @@ const messages = [
         sender: "Lawrence Patterson",
         time: "6:25 PM",
         text: "@wilson @jparker I have a new game plan",
-        isYou: false,
+        isYou: true,
       },
       {
         sender: "Jaden Parker",
@@ -142,12 +144,34 @@ const messages = [
 ];
 
 function ICGChat() {
+  const { socket } = useSocket();
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [messageInput, setMessageInput] = useState();
+
+  const sendMessage = (formdata) => {
+    console.log(socket);
+    if (!socket) {
+      console.log("Socket not initialized");
+      return;
+    }
+
+    console.log("Sending message", formdata.get("message"));
+    socket.emit("message", formdata.get("message"));
+  };
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on("receive_message", (data) => {
+      console.log(data);
+    });
+  }, [socket]);
+
   return (
     <>
       <div className="w-full h-screen overflow-auto p-4 flex gap-4">
         <div className="w-96 flex">
           <Sidebar />
-          <div className="space-y-3 max-h-full overflow-auto px-4 ">
+          <div className="space-y-3 max-h-full w-80 overflow-auto px-4 ">
             {conversations.map((conv, index) => (
               <Conversation
                 key={index}
@@ -160,44 +184,60 @@ function ICGChat() {
           </div>
         </div>
 
-        <div className="min-h-full flex flex-col bg-dark rounded-2xl grow">
+        <div className="min-h-full flex flex-col bg-dark rounded-2xl flex-1">
           <div className="flex-1 p-4 overflow-y-auto h-full">
             {/* Messages would be rendered here */}
             <div className="space-y-4">
               {/* Example message */}
-              {messages.map((message, index) => (
-                <div className="flex items-start" key={index}>
-                  <Avatar
-                    name="Conner Garcia"
-                    size="sm"
-                    src="https://100k-faces.glitch.me/random-image"
-                  />
-                  <div className="ml-3">
-                    <div className="flex items-center">
-                      <span className="font-medium">
-                        {message.chats[0].sender}
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        {message.date}
-                      </span>
+              {messages[1].chats.map((chat, index) => {
+                return (
+                  <div
+                    className={`flex items-start ${
+                      chat.isYou ? "bg-limegreen/50" : ""
+                    }`}
+                    key={index}
+                  >
+                    <Avatar
+                      name="Conner Garcia"
+                      size="sm"
+                      src="https://100k-faces.glitch.me/random-image"
+                    />
+                    <div className="ml-3 w-[70%]">
+                      <div className="flex items-center">
+                        <span className="font-medium">{chat.sender}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {chat.time}
+                        </span>
+                      </div>
+                      <p className="mt-1">{chat.text}</p>
                     </div>
-                    <p className="mt-1">{message.chats[0].text}</p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <div className="p-4 border-t">
-            <div className="flex">
-              <Input placeholder="Write a message..." variant="flat" />
-              <Button className="ml-2 bg-limegreen" startContent={<Send />} isIconOnly />
-            </div>
+            <form action={sendMessage}>
+              <div className="flex">
+                <Input
+                  placeholder="Write a message..."
+                  variant="flat"
+                  name="message"
+                />
+                <Button
+                  className="ml-2 bg-limegreen"
+                  startContent={<Send />}
+                  isIconOnly
+                  type="submit"
+                />
+              </div>
+            </form>
           </div>
         </div>
 
-        <div className="w-72 space-y-4">
-          <Card className="bg-dark flex ">
+        <div className="min-w-64 space-y-4">
+          <Card className="bg-dark">
             <CardBody className="flex flex-row justify-between">
               <Button
                 isIconOnly
@@ -230,19 +270,60 @@ function ICGChat() {
               <h3 className="font-bold">Members</h3>
             </CardHeader>
             <CardBody>
-              {members.map((member) => (
+              {members.map((member, index) => (
                 <User
+                  key={index}
                   className="justify-stretch py-1"
                   avatarProps={{
                     src: "https://i.pravatar.cc/150?u=a04258114e29026702d",
                   }}
                   name={member.name}
+                  classNames={{
+                    base: "hover:bg-dark-2 transition-all duration-200",
+                  }}
                 />
               ))}
             </CardBody>
           </Card>
 
-          <Card className="bg-dark mt-4"></Card>
+          <Card className="bg-dark mt-4 text-white">
+            <CardHeader>Files</CardHeader>
+            <CardBody>
+              <Accordion selectionMode="multiple" className="text-white">
+                {files.map((file) =>{
+                  switch file.type {
+                    case "photos":
+                      return <AccordionItem
+                      key="1"
+                      aria-label="Accordion 1"
+                      title={file.count}
+                    >
+                      {"ABC"}
+                    </AccordionItem>
+                    break;
+                    case "files":
+                      return <AccordionItem
+                      key="1"
+                      aria-label="Accordion 1"
+                      title={file.count}
+                    >
+                      {"ABC"}
+                    </AccordionItem>
+                    break;
+                    case "shared links":
+                      return <AccordionItem
+                      key="1"
+                      aria-label="Accordion 1"
+                      title={file.count}
+                    >
+                      {"ABC"}
+                    </AccordionItem>
+                    break;
+                  }
+                  })}
+              </Accordion>
+            </CardBody>
+          </Card>
         </div>
       </div>
     </>
