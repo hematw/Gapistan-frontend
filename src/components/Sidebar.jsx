@@ -1,12 +1,16 @@
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Plus } from "lucide-react";
-import React from "react";
+import React, { useContext } from "react";
+import { ThemeContext } from "../contexts/ThemeContext";
+import { Card } from "@heroui/card";
 
 function Sidebar() {
+  const  {toggleTheme} = useContext(ThemeContext);
+
   return (
-    <div className="bg-dark p-4 rounded-2xl flex flex-col gap-4">
-      <div className="rounded-full bg-limegreen w-10 h-10">
+    <Card className="p-4 rounded-2xl flex flex-col gap-4 shadow-lg dark:bg-dark">
+      <div className="rounded-full bg-limegreen w-10 h-10" onClick={toggleTheme}>
         <img src="/logo.png" alt="" className="w-10 h-10" />
       </div>
       <div className="flex flex-col gap-2">
@@ -23,13 +27,6 @@ function Sidebar() {
           name="Conner Garcia"
           fallback="Z"
           color="success"
-          className="whitespace-nowrap"
-        />
-        <Avatar
-          size="md"
-          name="Conner Garcia"
-          fallback="HW"
-          color="light"
           className="whitespace-nowrap"
         />
         <Avatar
@@ -59,10 +56,10 @@ function Sidebar() {
           startContent={<Plus />}
           isIconOnly
           radius="full"
-          className="bg-limegreen"
+          className="bg-limegreen text-black"
         />
       </div>
-    </div>
+    </Card>
   );
 }
 

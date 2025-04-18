@@ -4,7 +4,7 @@ import React from "react";
 
 function Conversation({ name, isYou, lastMessage, unread }) {
   return (
-    <div className="bg-dark hover:bg-dark-2 cursor-pointer rounded-2xl transition-all duration-200">
+    <div className="bg-white dark:bg-dark hover:bg-gray-100 dark:hover:bg-dark-2 cursor-pointer rounded-2xl transition-all duration-200 shadow-lg">
       <div className="flex items-center px-4 py-2">
         <Badge
           color="success"

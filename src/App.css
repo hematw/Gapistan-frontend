@@ -1,45 +1,39 @@
-/* Base styles (light mode as default) */
-body {
-  background-color: #ffffff;
-  color: #111111;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* Dark mode styles */
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #111111;
-    color: #ffffff;
-  }
+html{
+  transition:  all 0.3 ease-in-out;
+  transition-duration: 0.2s;
 }
 
 body {
+  background-color: #ededed;
   font-family: "Poppins", sans-serif;
+}
+
+.dark body {
+  background-color: #111111;
 }
 
 /* For modern browsers */
 ::-webkit-scrollbar {
-    width: 10px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #363636; /* Light background for contrast */
-    border-radius: 10px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background-color: #bcff9d;
-    border-radius: 10px;
-    border: 2px solid #363636; /* For a soft inner border */
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background-color: #a6f07c; /* Slightly darker on hover */
-  }
-  
-  /* For Firefox */
-  * {
-    scrollbar-width: thin;
-    scrollbar-color: #bcff9d #363636;
-  }
-  
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #363636; /* Light background for contrast */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #bcff9d;
+  border-radius: 10px;
+  border: 2px solid #363636; /* For a soft inner border */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #a6f07c; /* Slightly darker on hover */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #bcff9d #363636;
+}
