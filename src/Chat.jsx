@@ -1,18 +1,25 @@
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Navbar, NavbarBrand } from "@heroui/navbar";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import React, { useEffect, useState } from "react";
-import { Badge } from "@heroui/badge";
 import Conversation from "./components/Conversation";
 import Sidebar from "./components/Sidebar";
 import { User } from "@heroui/user";
-import { PhoneCall, Pin, Send, Users, Video } from "lucide-react";
 import { useSocket } from "./contexts/SocketContext";
 import { Accordion, AccordionItem } from "@heroui/accordion";
 import { Chip } from "@heroui/chip";
 import { Tooltip } from "@heroui/tooltip";
+import {
+  ArrowRight,
+  Phone,
+  PhoneCall,
+  Pin,
+  Send,
+  User2,
+  Users,
+  Video,
+} from "lucide-react";
 
 const conversations = [
   {
@@ -163,10 +170,10 @@ function Chat() {
 
   return (
     <>
-      <div className="w-full h-screen overflow-auto p-4 flex gap-4">
-        <div className="w-96 flex">
+      <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
+        <div className="flex w-96">
           <Sidebar />
-          <div className="space-y-3 max-h-full w-80 overflow-auto px-4 pb-4">
+          <div className="space-y-3 px-4 pb-4 w-80 max-h-full overflow-auto">
             {conversations.map((conv, index) => (
               <Conversation
                 key={index}
@@ -179,20 +186,32 @@ function Chat() {
           </div>
         </div>
 
-        <div className="min-h-full flex flex-col bg-white dark:bg-dark rounded-2xl flex-1 shadow-lg">
-          <div className="flex-1 p-4 overflow-y-auto h-full">
-            {/* Messages would be rendered here */}
+        <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl min-h-full">
+          <div className="flex-1 p-4 h-full overflow-y-auto">
             <div className="space-y-4">
               {messages.map((day, index) => (
                 <div key={index} className="space-y-1">
-                  <Chip className="m-auto flex my-2">{day.date}</Chip>
+                  <Chip className="flex m-auto my-2">{day.date}</Chip>
 
-                  {/* Events (like notifications) */}
                   {day.events.map((event, i) => (
-                    <div key={`event-${i}`}>{event.text}</div>
+                    <div
+                      key={`event-${i}`}
+                      className="flex items-center gap-1 text-xs"
+                    >
+                      <span>
+                        {event.type === "notification" ? (
+                          <ArrowRight size={16} />
+                        ) : event.type === "video-call" ? (
+                          <Phone size={16} />
+                        ) : (
+                          <User2 />
+                        )}
+                      </span>
+                      <span></span>
+                      {event.text}
+                    </div>
                   ))}
 
-                  {/* Chats (messages) */}
                   {day.chats.map((chat, i) => (
                     <div
                       className={`flex rounded-lg px-2 py-1 max-w-[70%] w-fit gap-2 ${
@@ -213,7 +232,7 @@ function Chat() {
                           <span className="font-medium text-xs">
                             {chat.sender}
                           </span>
-                          <span className="text-xs text-gray-500 ml-2">
+                          <span className="ml-2 text-gray-500 text-xs">
                             {chat.time}
                           </span>
                         </div>
@@ -235,7 +254,7 @@ function Chat() {
                   name="message"
                 />
                 <Button
-                  className="ml-2 bg-limegreen text-black"
+                  className="bg-limegreen ml-2 text-black"
                   startContent={<Send />}
                   isIconOnly
                   type="submit"
@@ -245,7 +264,7 @@ function Chat() {
           </div>
         </div>
 
-        <div className="min-w-64 space-y-4 overflow-auto pr-2 pb-4">
+        <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto">
           <Card className="bg-white dark:bg-dark shadow-lg">
             <CardBody className="flex flex-row justify-between">
               <Tooltip content="Call" placement="top">
@@ -269,9 +288,7 @@ function Chat() {
           </Card>
           <Card className="bg-white dark:bg-dark shadow-lg">
             <CardHeader>
-              {/* <h3 className="font-bold"> */}
               Members
-              {/* </h3> */}
             </CardHeader>
             <CardBody>
               {members.map((member, index) => (
@@ -290,7 +307,7 @@ function Chat() {
             </CardBody>
           </Card>
 
-          <Card className="bg-white dark:bg-dark mt-4 shadow-lg">
+          <Card className="bg-white dark:bg-dark shadow-lg mt-4">
             <CardHeader>Files</CardHeader>
             <CardBody>
               <Accordion selectionMode="multiple">
