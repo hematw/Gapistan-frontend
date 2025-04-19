@@ -1,9 +1,10 @@
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
+import { Key, Lock, Mail, User } from "lucide-react";
 import React from "react";
 
-function Register() {
+export default function SignUp() {
   return (
     <div className="flex justify-center items-center min-h-screen">
       <Card className="mx-auto p-6 w-full max-w-md">
@@ -20,18 +21,20 @@ function Register() {
             <div>
               <Input
                 fullWidth
+                startContent={<User size={16}/>}
                 label="Username"
                 type="text"
                 id="username"
                 name="username"
                 required
-              />
+                />
             </div>
 
             {/* Email */}
             <div>
               <Input
                 fullWidth
+                startContent={<Mail size={16}/>}
                 label="Email"
                 type="email"
                 id="email"
@@ -44,6 +47,7 @@ function Register() {
             <div>
               <Input
                 fullWidth
+                startContent={<Lock size={16}/>}
                 label="Password"
                 type="password"
                 id="password"
@@ -56,6 +60,7 @@ function Register() {
             <div>
               <Input
                 fullWidth
+                startContent={<Lock size={16}/>}
                 label="Confirm Password"
                 type="password"
                 id="confirmPassword"
@@ -99,5 +104,3 @@ function Register() {
     </div>
   );
 }
-
-export default Register;
