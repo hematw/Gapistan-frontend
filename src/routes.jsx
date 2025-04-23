@@ -1,17 +1,23 @@
-import { createBrowserRouter } from "react-router-dom";
 import Chat from "./pages/Chat";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Home from "./pages/Home";
+import ProtectedLayout from "./pages/ProtectedLayout";
 
-const router = createBrowserRouter([
+const router = [
   {
     path: "/",
     element: <Home />,
   },
   {
     path: "/chat",
-    element: <Chat />,
+    element: <ProtectedLayout />,
+    children: [
+      {
+        index: true,
+        element: <Chat />,
+      },
+    ],
   },
   {
     path: "/signin",
@@ -21,6 +27,6 @@ const router = createBrowserRouter([
     path: "/signup",
     element: <SignUp />,
   },
-]);
+];
 
 export default router;

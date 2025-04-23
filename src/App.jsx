@@ -1,21 +1,12 @@
-import { BrowserRouter, RouterProvider } from "react-router-dom";
+import { BrowserRouter, RouterProvider, useRoutes } from "react-router-dom";
 import "./App.css";
-// import Chat from "./Chat";
-// import SpotlightCard from "./components/SpotlightCard";
-// import Login from "./pages/login";
-// import Register from "./pages/register";
-import RoutesRenderer from "./routes";
 import router from "./routes";
+import Providers from "./providers";
 
 function App() {
-  return (
-    <>
-      {/* <Chat /> */}
-      {/* <Login /> */}
-      {/* <Register /> */}
-      <RouterProvider router={router} />
-    </>
-  );
+  const routing = useRoutes(router);
+
+  return <Providers>{routing}</Providers>;
 }
 
 export default App;

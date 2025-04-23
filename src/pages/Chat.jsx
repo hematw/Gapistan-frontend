@@ -1,25 +1,21 @@
 import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Card, CardBody, CardHeader } from "@heroui/card";
 import React, { useEffect, useState } from "react";
-import Conversation from "../components/Conversation";
 import Sidebar from "../components/Sidebar";
-import { User } from "@heroui/user";
 import { useSocket } from "../contexts/SocketContext";
-import { Accordion, AccordionItem } from "@heroui/accordion";
 import { Chip } from "@heroui/chip";
-import { Tooltip } from "@heroui/tooltip";
 import {
-  ArrowRight,
-  Phone,
-  PhoneCall,
-  Pin,
+  Bell,
+  Search,
   Send,
-  User2,
-  Users,
-  Video,
+  Settings,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import ChatListPanel from "../components/ChatListPanel";
+import RightSidebar from "../components/RightSidebar";
+import MessageBubble from "../components/MessageBubble";
+import ChatEvent from "../components/ChatEvent";
 
 const conversations = [
   {
@@ -150,6 +146,8 @@ function Chat() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messageInput, setMessageInput] = useState();
 
+  const navigate = useNavigate();
+
   const sendMessage = (formdata) => {
     console.log(socket);
     if (!socket) {
@@ -168,186 +166,83 @@ function Chat() {
     });
   }, [socket]);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+    }
+  }, []);
+
   return (
     <>
       <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
         <div className="flex w-96">
           <Sidebar />
-          <div className="space-y-3 px-4 pb-4 w-80 max-h-full overflow-auto">
-            {conversations.map((conv, index) => (
-              <Conversation
-                key={index}
-                name={conv.name}
-                isYou={conv.isYou}
-                unread={conv.unread}
-                lastMessage={conv.lastMessage}
-              />
-            ))}
-          </div>
+          <ChatListPanel chats={conversations} />
         </div>
 
-        <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl min-h-full">
-          <div className="flex-1 p-4 h-full overflow-y-auto">
-            <div className="space-y-4">
-              {messages.map((day, index) => (
-                <div key={index} className="space-y-1">
-                  <Chip className="flex m-auto my-2">{day.date}</Chip>
+        <div>
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl fond-semibold">Gapistan</h1>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search"
+                variant="flat"
+                className="w-64"
+                radius="full"
+                startContent={<Search size={16} />}
+              />
 
-                  {day.events.map((event, i) => (
-                    <div
-                      key={`event-${i}`}
-                      className="flex items-center gap-1 text-xs"
-                    >
-                      <span>
-                        {event.type === "notification" ? (
-                          <ArrowRight size={16} />
-                        ) : event.type === "video-call" ? (
-                          <Phone size={16} />
-                        ) : (
-                          <User2 />
-                        )}
-                      </span>
-                      <span></span>
-                      {event.text}
-                    </div>
-                  ))}
+              <Button startContent={<Settings />} isIconOnly radius="full" />
+              <Button startContent={<Bell />} isIconOnly radius="full" />
+              <Avatar
+                name="Conner Garcia"
+                src="https://100k-faces.glitch.me/random-image"
+                className="ml-2 min-w-10"
+              />
+            </div>
+          </div>
+          <div className="flex gap-4 h-[85vh]">
+            <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl">
+              <div className="flex-1 p-4 overflow-y-auto">
+                <div className="space-y-4">
+                  {messages.map((day, index) => (
+                    <div key={index} className="space-y-1">
+                      <Chip className="flex m-auto my-2">{day.date}</Chip>
 
-                  {day.chats.map((chat, i) => (
-                    <div
-                      className={`flex rounded-lg px-2 py-1 max-w-[70%] w-fit gap-2 ${
-                        chat.isYou
-                          ? "bg-limegreen text-black flex-row-reverse ml-auto  rounded-tr-none"
-                          : "bg-gray-300 dark:bg-dark-2 dark:text-gray-100 shadow-sm text-black rounded-tl-none"
-                      }`}
-                      key={"chat-" + i}
-                    >
-                      <Avatar
-                        name="Conner Garcia"
-                        size="sm"
-                        src="https://100k-faces.glitch.me/random-image"
-                        className="min-w-8"
-                      />
-                      <div className="">
-                        <div className="flex items-center text-nowrap">
-                          <span className="font-medium text-xs">
-                            {chat.sender}
-                          </span>
-                          <span className="ml-2 text-gray-500 text-xs">
-                            {chat.time}
-                          </span>
-                        </div>
-                        <p className="mt-1">{chat.text}</p>
-                      </div>
+                      {day.events.map((event, i) => (
+                       <ChatEvent event={event} key={i} />
+                      ))}
+
+                      {day.chats.map((chat, i) => (
+                        <MessageBubble chat={chat} />
+                      ))}
                     </div>
                   ))}
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 border-t">
-            <form action={sendMessage}>
-              <div className="flex">
-                <Input
-                  placeholder="Write a message..."
-                  variant="bordered"
-                  name="message"
-                />
-                <Button
-                  className="bg-limegreen ml-2 text-black"
-                  startContent={<Send />}
-                  isIconOnly
-                  type="submit"
-                />
               </div>
-            </form>
+
+              <div className="p-4 border-t">
+                <form action={sendMessage}>
+                  <div className="flex">
+                    <Input
+                      placeholder="Write a message..."
+                      variant="bordered"
+                      name="message"
+                    />
+                    <Button
+                      className="bg-limegreen ml-2 text-black"
+                      startContent={<Send />}
+                      isIconOnly
+                      type="submit"
+                    />
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <RightSidebar members={members} files={files} />
           </div>
-        </div>
-
-        <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto">
-          <Card className="bg-white dark:bg-dark shadow-lg">
-            <CardBody className="flex flex-row justify-between">
-              <Tooltip content="Call" placement="top">
-                <Button
-                  isIconOnly
-                  radius="full"
-                  startContent={<PhoneCall />}
-                  className="bg-limegreen text-black"
-                />
-              </Tooltip>
-              <Tooltip content="Video Call" placement="top">
-                <Button isIconOnly radius="full" startContent={<Video />} />
-              </Tooltip>
-              <Tooltip content="Pin" placement="top">
-                <Button isIconOnly radius="full" startContent={<Pin />} />
-              </Tooltip>
-              <Tooltip content="Add to group" placement="top">
-                <Button isIconOnly radius="full" startContent={<Users />} />
-              </Tooltip>
-            </CardBody>
-          </Card>
-          <Card className="bg-white dark:bg-dark shadow-lg">
-            <CardHeader>
-              Members
-            </CardHeader>
-            <CardBody>
-              {members.map((member, index) => (
-                <User
-                  key={index}
-                  className="justify-stretch py-1"
-                  avatarProps={{
-                    src: "https://i.pravatar.cc/150?u=a04258114e29026702d",
-                  }}
-                  name={member.name}
-                  classNames={{
-                    base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
-                  }}
-                />
-              ))}
-            </CardBody>
-          </Card>
-
-          <Card className="bg-white dark:bg-dark shadow-lg mt-4">
-            <CardHeader>Files</CardHeader>
-            <CardBody>
-              <Accordion selectionMode="multiple">
-                {files.map((file) => {
-                  switch (file.type) {
-                    case "photos":
-                      return (
-                        <AccordionItem
-                          // key="1"
-                          aria-label="Accordion 1"
-                          title={file.count + " Photos"}
-                        >
-                          {"ABC"}
-                        </AccordionItem>
-                      );
-                    case "files":
-                      return (
-                        <AccordionItem
-                          // key="1"
-                          aria-label="Accordion 1"
-                          title={file.count + " Files"}
-                        >
-                          {"ABC"}
-                        </AccordionItem>
-                      );
-                    case "shared links":
-                      return (
-                        <AccordionItem
-                          // key="1"
-                          aria-label="Accordion 1"
-                          title={file.count + " Shared Links"}
-                        >
-                          {"ABC"}
-                        </AccordionItem>
-                      );
-                  }
-                })}
-              </Accordion>
-            </CardBody>
-          </Card>
         </div>
       </div>
     </>

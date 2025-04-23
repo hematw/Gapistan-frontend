@@ -2,9 +2,9 @@ import { Avatar } from "@heroui/avatar";
 import { Badge } from "@heroui/badge";
 import React from "react";
 
-function Conversation({ name, isYou, lastMessage, unread }) {
+function ChatItem({ name, isYou, lastMessage, unread }) {
   return (
-    <div className="bg-white dark:bg-dark hover:bg-gray-100 dark:hover:bg-dark-2 cursor-pointer rounded-2xl transition-all duration-200 shadow-lg">
+    <div className="bg-white hover:bg-gray-100 dark:hover:bg-dark-2 dark:bg-dark shadow-lg rounded-2xl transition-all duration-200 cursor-pointer">
       <div className="flex items-center px-4 py-2">
         <Badge
           color="success"
@@ -20,7 +20,7 @@ function Conversation({ name, isYou, lastMessage, unread }) {
         </Badge>
         <div className="ml-3">
           <p className="line-clamp-1">{name}</p>
-          <p className="text-xs text-gray-500 line-clamp-1">
+          <p className="text-gray-500 text-xs line-clamp-1">
             {isYou ? "You: " : ""}
             {lastMessage}
           </p>
@@ -31,4 +31,4 @@ function Conversation({ name, isYou, lastMessage, unread }) {
   );
 }
 
-export default Conversation;
+export default ChatItem;

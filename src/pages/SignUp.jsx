@@ -1,13 +1,14 @@
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
-import { Key, Lock, Mail, User } from "lucide-react";
-import React from "react";
+import { Lock, Mail, User } from "lucide-react";
+import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import axiosIns from "../utils/axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
+import PassInput from "../components/PassInput";
+import { useAuth } from "../contexts/AuthContext";
 
 const schema = z
   .object({
@@ -27,7 +28,9 @@ const schema = z
   });
 
 export default function SignUp() {
-  const { control, handleSubmit, formState, watch } = useForm({
+  const { signUp, isLoggedIn } = useAuth();
+
+  const { control, handleSubmit, formState } = useForm({
     resolver: zodResolver(schema),
     mode: "onChange",
     defaultValues: {
@@ -40,46 +43,38 @@ export default function SignUp() {
 
   const navigate = useNavigate();
 
-  const checkUsername = async (username) => {
-    if (username.length < 3) {
-      return "Username must be at least 3 characters long";
-    }
-    try {
-      const { data } = await axiosIns.post("/auth/check-username", {
-        username,
-      });
-    } catch (error) {
-      console.error(error);
-      if (error.response.status === 409) {
-        formState.errors.username.message = error.response.data.message;
-        return "Username already exists";
-      }
-    }
-  };
+  // const checkUsername = async (username) => {
+  //   if (username.length < 3) {
+  //     return "Username must be at least 3 characters long";
+  //   }
+  //   try {
+  //     const { data } = await axiosIns.post("/auth/check-username", {
+  //       username,
+  //     });
+  //   } catch (error) {
+  //     console.error(error);
+  //     if (error.response.status === 409) {
+  //       formState.errors.username.message = error.response.data.message;
+  //       return "Username already exists";
+  //     }
+  //   }
+  // };
 
   const onSubmit = handleSubmit(async (formData) => {
-    console.log(formData);
-    try {
-      const { data } = await axiosIns.post("/auth/signup", formData);
-      console.log(data);
-
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.createdUser));
-      navigate("/chat");
-    } catch (error) {
-      console.error(error);
-      if (error.statusCode === 409) {
-        formState.errors.username.message = error.response.data.message;
-      }
-    }
+    await signUp(formData);
   });
 
-  console.log(formState.errors);
-  console.log(watch());
+  useEffect(() => {
+    if (isLoggedIn) {
+      navigate("/chat", { replace: true });
+    }
+  }, []);
+
+  if (isLoggedIn) return null; 
 
   return (
     <div className="flex justify-center items-center min-h-screen">
-      <Card className="mx-auto p-6 w-full max-w-md">
+      <Card className="mx-auto p-6 border w-full max-w-md">
         <CardHeader className="text-center">
           <p className="font-medium text-2xl">Create Account</p>
         </CardHeader>
@@ -98,6 +93,7 @@ export default function SignUp() {
                   <Input
                     {...field}
                     fullWidth
+                    variant="faded"
                     startContent={<User size={16} />}
                     label="Username"
                     type="text"
@@ -119,6 +115,7 @@ export default function SignUp() {
                   <Input
                     {...field}
                     fullWidth
+                    variant="faded"
                     startContent={<Mail size={16} />}
                     label="Email"
                     type="email"
@@ -137,9 +134,10 @@ export default function SignUp() {
                 name="password"
                 control={control}
                 render={({ field }) => (
-                  <Input
+                  <PassInput
                     {...field}
                     fullWidth
+                    variant="faded"
                     startContent={<Lock size={16} />}
                     label="Password"
                     type="password"
@@ -158,9 +156,10 @@ export default function SignUp() {
                 name="confirmPassword"
                 control={control}
                 render={({ field }) => (
-                  <Input
+                  <PassInput
                     {...field}
                     fullWidth
+                    variant="faded"
                     startContent={<Lock size={16} />}
                     label="Confirm Password"
                     type="password"
