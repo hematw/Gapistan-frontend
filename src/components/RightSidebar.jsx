@@ -5,7 +5,7 @@ import ChatActions from "./ChatActions";
 
 function RightSidebar({ members, files }) {
   return (
-    <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto">
+    <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto hidden lg:block max-h-full">
       <ChatActions />
 
       <MemberList members={members} />

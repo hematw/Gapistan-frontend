@@ -5,17 +5,20 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Chip } from "@heroui/chip";
-import {
-  Bell,
-  Search,
-  Send,
-  Settings,
-} from "lucide-react";
+import { Bell, Search, Send, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
 import MessageBubble from "../components/MessageBubble";
 import ChatEvent from "../components/ChatEvent";
+import { useQuery } from "@tanstack/react-query";
+import axiosIns from "../utils/axios";
+import { Listbox, ListboxItem, ListboxSection } from "@heroui/listbox";
+import { User } from "@heroui/user";
+import { Spinner } from "@heroui/spinner";
+import { useAuth } from "../contexts/AuthContext";
+import { useDebounce } from "../hooks/useDebounce";
+import { addToast } from "@heroui/toast";
 
 const conversations = [
   {
@@ -145,8 +148,34 @@ function Chat() {
   const { socket } = useSocket();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messageInput, setMessageInput] = useState();
+  const [search, setSearch] = useState("");
+  const { user, isLoggedIn } = useAuth();
+  const debouncedSearch = useDebounce(search, 500);
 
-  const navigate = useNavigate();
+  const {
+    data: chatsData,
+    isLoading: chatsLoading,
+    error: chatsErr,
+  } = useQuery({
+    queryKey: ["chats"],
+    queryFn: async () => {
+      const { data } = await axiosIns.get("/chats");
+      return data;
+    },
+  });
+
+  const {
+    data: searchResults,
+    isLoading: searchLoading,
+    error: searchErr,
+  } = useQuery({
+    queryKey: ["chats", debouncedSearch],
+    queryFn: async () => {
+      const { data } = await axiosIns.get(`/chats/search?query=${debouncedSearch}`);
+      return data;
+    },
+    enabled: !!debouncedSearch,
+  });
 
   const sendMessage = (formdata) => {
     console.log(socket);
@@ -155,49 +184,153 @@ function Chat() {
       return;
     }
 
+    const text=  formdata.get("text");
+    if (!text) {
+      console.log("Message is empty");
+      return addToast({title: "Message is empty", description:"You can not send empty messages",  color: "danger"});
+    }
+
     console.log("Sending message", formdata.get("message"));
     socket.emit("message", formdata.get("message"));
   };
 
   useEffect(() => {
     if (!socket) return;
-    socket.on("receive_message", (data) => {
-      console.log(data);
+    socket.emit("user_online", {
+      userId: "12345",
     });
+
+    socket.on("receive_message", (msg) => {
+      console.log(msg);
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
   }, [socket]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-    }
-  }, []);
+  if (chatsLoading) {
+    return <p className="text-2xl">Loading...</p>;
+  }
 
   return (
     <>
       <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
         <div className="flex w-96">
           <Sidebar />
-          <ChatListPanel chats={conversations} />
+          <ChatListPanel chats={chatsData?.chats} isLoading={chatsLoading} />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
             <div className="flex items-center gap-2">
-              <Input
-                placeholder="Search"
-                variant="flat"
-                className="w-64"
-                radius="full"
-                startContent={<Search size={16} />}
-              />
+              <div className="relative">
+                <Input
+                  placeholder="Search"
+                  variant="flat"
+                  className="w-64"
+                  radius="full"
+                  startContent={<Search size={16} />}
+                  value={search}
+                  onChange={(e) => {
+                    console.log(e.target.value);
+                    setSearch(e.target.value);
+                  }}
+                />
+
+                {(searchResults || searchLoading) && (
+                  <Listbox
+                    aria-label="search results"
+                    className="top-full left-0 absolute bg-stone-900 p-2 border border-default-200 rounded-xl mt-2 z-50"
+                  >
+                    {searchLoading ? (
+                      <ListboxItem
+                        aria-label="result"
+                        classNames={{
+                          title: "flex items-center justify-center p-4",
+                        }}
+                      >
+                        <Spinner size="lg" color="success" className="block" />
+                      </ListboxItem>
+                    ) : (
+                      <>
+                        <ListboxSection showDivider title="Chats">
+                          {searchResults.chats.length ? (
+                            searchResults?.chats?.map((chat, index) => (
+                              <ListboxItem
+                                key={index}
+                                aria-label="result"
+                                className="flex items-center gap-2 p-2 cursor-pointer"
+                              >
+                                <User
+                                  name={chat.chatName}
+                                  description={`@${chat?.username}`}
+                                  avatarProps={{
+                                    src: chat?.profile,
+                                    fallback: chat.chatName[0].toUpperCase(),
+                                    showFallback: true,
+                                    color: "success",
+                                  }}
+                                />
+                              </ListboxItem>
+                            ))
+                          ) : (
+                            <ListboxItem
+                              aria-label="result"
+                              classNames={{
+                                title: "flex items-center justify-center p-4",
+                              }}
+                            >
+                              No results found
+                            </ListboxItem>
+                          )}
+                        </ListboxSection>
+                        <ListboxSection title="Other Results">
+                          {searchResults.otherResults.length ? (
+                            searchResults?.otherResults?.map((chat, index) => (
+                              <ListboxItem
+                                key={index}
+                                aria-label="result"
+                                className="flex items-center gap-2 p-2 cursor-pointer"
+                              >
+                                <User
+                                  name={chat.chatName}
+                                  description={`@${chat?.username}`}
+                                  avatarProps={{
+                                    src: chat?.profile,
+                                    fallback: chat.chatName[0].toUpperCase(),
+                                    showFallback: true,
+                                    color: "success",
+                                  }}
+                                />
+                              </ListboxItem>
+                            ))
+                          ) : (
+                            <ListboxItem
+                              aria-label="result"
+                              classNames={{
+                                title: "flex items-center justify-center p-4",
+                              }}
+                            >
+                              No results found
+                            </ListboxItem>
+                          )}
+                        </ListboxSection>
+                      </>
+                    )}
+                  </Listbox>
+                )}
+              </div>
 
               <Button startContent={<Settings />} isIconOnly radius="full" />
               <Button startContent={<Bell />} isIconOnly radius="full" />
               <Avatar
-                name="Conner Garcia"
-                src="https://100k-faces.glitch.me/random-image"
+                name={`${user?.firstName} ${user?.lastName}`}
+                description={`@${user?.username}`}
+                src={user?.profile}
+                color="success"
+                fallback={user?.firstName ?`${user?.firstName[0]} ${user?.lastName[0]}` : `${user?.username[0]}`}
                 className="ml-2 min-w-10"
               />
             </div>
@@ -211,11 +344,11 @@ function Chat() {
                       <Chip className="flex m-auto my-2">{day.date}</Chip>
 
                       {day.events.map((event, i) => (
-                       <ChatEvent event={event} key={i} />
+                        <ChatEvent event={event} key={i} />
                       ))}
 
                       {day.chats.map((chat, i) => (
-                        <MessageBubble chat={chat} />
+                        <MessageBubble chat={chat} key={i} />
                       ))}
                     </div>
                   ))}
@@ -228,7 +361,7 @@ function Chat() {
                     <Input
                       placeholder="Write a message..."
                       variant="bordered"
-                      name="message"
+                      name="text"
                     />
                     <Button
                       className="bg-limegreen ml-2 text-black"

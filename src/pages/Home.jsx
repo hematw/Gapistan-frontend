@@ -1,5 +1,12 @@
 import React from "react";
-import { User, Lock, MessagesSquare, Globe, Smartphone, Zap } from "lucide-react";
+import {
+  User,
+  Lock,
+  MessagesSquare,
+  Globe,
+  Smartphone,
+  Zap,
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@heroui/button";
 import { useNavigate } from "react-router-dom";
@@ -16,13 +23,16 @@ const Home = () => {
             <span className="font-bold text-white text-2xl">Gapistan</span>
           </div>
           <div className="hidden md:flex space-x-4">
-            <Button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all">
+            <Button
+              onPress={() => navigate("/chat")}
+              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all"
+            >
               Features
             </Button>
             <Button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all">
               About
             </Button>
-            <Button 
+            <Button
               className="bg-white hover:bg-opacity-90 text-lime-600 transition-all"
               onPress={() => navigate("/signin")}
             >
@@ -38,9 +48,12 @@ const Home = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-20 pt-10 text-white text-center"
         >
-          <h1 className="mb-6 font-bold text-6xl md:text-7xl">Welcome to Gapistan</h1>
+          <h1 className="mb-6 font-bold text-6xl md:text-7xl">
+            Welcome to Gapistan
+          </h1>
           <p className="mx-auto mb-10 max-w-2xl text-xl md:text-2xl">
-            Connect, Chat, and Collaborate in Real-Time with the most intuitive messaging platform
+            Connect, Chat, and Collaborate in Real-Time with the most intuitive
+            messaging platform
           </p>
           <div className="flex sm:flex-row flex-col justify-center gap-4">
             <Button
@@ -85,8 +98,13 @@ const Home = () => {
               className="bg-white/10 shadow-lg backdrop-blur-sm p-8 rounded-xl"
             >
               <User className="mb-4 w-12 h-12" />
-              <h3 className="mb-3 font-semibold text-xl">Group Conversations</h3>
-              <p className="text-white/90">Create and join group chats with friends and colleagues for better collaboration</p>
+              <h3 className="mb-3 font-semibold text-xl">
+                Group Conversations
+              </h3>
+              <p className="text-white/90">
+                Create and join group chats with friends and colleagues for
+                better collaboration
+              </p>
             </motion.div>
 
             <motion.div
@@ -95,7 +113,10 @@ const Home = () => {
             >
               <Lock className="mb-4 w-12 h-12" />
               <h3 className="mb-3 font-semibold text-xl">Secure Messaging</h3>
-              <p className="text-white/90">Your conversations are protected with end-to-end encryption for maximum privacy</p>
+              <p className="text-white/90">
+                Your conversations are protected with end-to-end encryption for
+                maximum privacy
+              </p>
             </motion.div>
           </div>
         </motion.div>
@@ -111,8 +132,12 @@ const Home = () => {
             className="bg-white/5 backdrop-blur-sm p-6 border border-white/10 rounded-xl"
           >
             <Globe className="mb-3 w-8 h-8 text-white" />
-            <h3 className="mb-2 font-semibold text-white text-lg">Global Access</h3>
-            <p className="text-white/80">Connect with anyone, anywhere in the world with our global network</p>
+            <h3 className="mb-2 font-semibold text-white text-lg">
+              Global Access
+            </h3>
+            <p className="text-white/80">
+              Connect with anyone, anywhere in the world with our global network
+            </p>
           </motion.div>
 
           <motion.div
@@ -120,8 +145,13 @@ const Home = () => {
             className="bg-white/5 backdrop-blur-sm p-6 border border-white/10 rounded-xl"
           >
             <Smartphone className="mb-3 w-8 h-8 text-white" />
-            <h3 className="mb-2 font-semibold text-white text-lg">Mobile Friendly</h3>
-            <p className="text-white/80">Take your conversations on the go with our responsive mobile design</p>
+            <h3 className="mb-2 font-semibold text-white text-lg">
+              Mobile Friendly
+            </h3>
+            <p className="text-white/80">
+              Take your conversations on the go with our responsive mobile
+              design
+            </p>
           </motion.div>
 
           <motion.div
@@ -129,8 +159,12 @@ const Home = () => {
             className="bg-white/5 backdrop-blur-sm p-6 border border-white/10 rounded-xl"
           >
             <Zap className="mb-3 w-8 h-8 text-white" />
-            <h3 className="mb-2 font-semibold text-white text-lg">Lightning Fast</h3>
-            <p className="text-white/80">Experience lightning-fast message delivery with minimal latency</p>
+            <h3 className="mb-2 font-semibold text-white text-lg">
+              Lightning Fast
+            </h3>
+            <p className="text-white/80">
+              Experience lightning-fast message delivery with minimal latency
+            </p>
           </motion.div>
         </motion.div>
 
@@ -142,7 +176,8 @@ const Home = () => {
         >
           <h2 className="mb-4 font-bold text-3xl">Ready to get started?</h2>
           <p className="mx-auto mb-8 max-w-2xl text-xl">
-            Join thousands of users already enjoying the seamless communication experience on Gapistan
+            Join thousands of users already enjoying the seamless communication
+            experience on Gapistan
           </p>
           <Button
             className="bg-white hover:bg-opacity-90 shadow-lg px-8 py-3 rounded-full font-medium text-lime-600 text-lg"
@@ -155,9 +190,15 @@ const Home = () => {
         <footer className="py-6 text-white/70 text-center">
           <p>© 2023 Gapistan. All rights reserved.</p>
           <div className="flex justify-center space-x-4 mt-4">
-            <a href="#" className="hover:text-white transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Contact</a>
+            <a href="#" className="hover:text-white transition-colors">
+              Privacy
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
+              Terms
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
+              Contact
+            </a>
           </div>
         </footer>
       </div>
