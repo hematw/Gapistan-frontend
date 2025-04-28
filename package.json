@@ -29,6 +29,7 @@
     "@heroui/select": "^2.4.13",
     "@heroui/skeleton": "^2.2.10",
     "@heroui/slider": "^2.4.11",
+    "@heroui/switch": "^2.2.15",
     "@heroui/system": "^2.4.10",
     "@heroui/theme": "^2.4.9",
     "@heroui/toast": "^2.0.5",

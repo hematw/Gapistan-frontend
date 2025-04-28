@@ -1,11 +1,10 @@
-import { Avatar } from "@heroui/avatar";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Chip } from "@heroui/chip";
-import { Bell, Search, Send, Settings } from "lucide-react";
+import { Bell, Send, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
@@ -13,82 +12,11 @@ import MessageBubble from "../components/MessageBubble";
 import ChatEvent from "../components/ChatEvent";
 import { useQuery } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
-import { Listbox, ListboxItem, ListboxSection } from "@heroui/listbox";
-import { User } from "@heroui/user";
-import { Spinner } from "@heroui/spinner";
 import { useAuth } from "../contexts/AuthContext";
-import { useDebounce } from "../hooks/useDebounce";
 import { addToast } from "@heroui/toast";
+import ChatHeader from "../components/ChatHeader";
+import ProfileDropdown from "../components/ProfileDropdown";
 
-const conversations = [
-  {
-    id: 1,
-    name: "Jabien",
-    lastMessage: "Let’s discuss this icon...",
-    unread: false,
-  },
-  {
-    id: 2,
-    name: "Sarah Parker",
-    lastMessage: "Ok, see you soon!",
-    unread: false,
-    isYou: true,
-  },
-  {
-    id: 3,
-    name: "Abubakar Campbell",
-    lastMessage: "Do you think we can do it?",
-    unread: false,
-    isYou: true,
-  },
-  { id: 4, name: "Nathaniel Jordan", lastMessage: "I’m busy!", unread: true },
-  {
-    id: 5,
-    name: "Conner Garcia",
-    lastMessage: "Hey, maybe we can meet...",
-    unread: false,
-    isYou: true,
-  },
-  {
-    id: 6,
-    name: "Cynthia Mckay",
-    lastMessage: "Maybe.",
-    unread: false,
-    isYou: true,
-  },
-  {
-    id: 7,
-    name: "Cora Richards",
-    lastMessage: "Will you go play?",
-    unread: true,
-  },
-  {
-    id: 8,
-    name: "Lawrence Patterson",
-    lastMessage: "I have the guys what they think!",
-    unread: true,
-  },
-  {
-    id: 9,
-    name: "Lisa Mcgowan",
-    lastMessage: "We can try this strategy!...",
-    unread: false,
-    isYou: true,
-  },
-  {
-    id: 10,
-    name: "Alan Bonner",
-    lastMessage: "He is a great time yesterday!",
-    unread: true,
-  },
-  {
-    id: 11,
-    name: "Fletcher Morse",
-    lastMessage: "I need to work, sorry!",
-    unread: false,
-    isYou: true,
-  },
-];
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -105,52 +33,70 @@ const files = [
   { type: "shared links", count: 47 },
 ];
 
-const messages = [
-  {
-    date: "9 Sep 2024",
-    events: [{ type: "notification", text: "Richard Wilson added You" }],
-    chats: [
-      {
-        sender: "Conner Garcia",
-        time: "6:00 PM",
-        text: 'Hey guys! Don’t forget about our meeting next week! I’ll be waiting for you at the "Cozy Corner" café at 6:00 PM. Don’t be late!',
-        isYou: false,
-      },
-      {
-        sender: "Richard Wilson",
-        time: "6:05 PM",
-        text: "Absolutely. I’ll be there! Looking forward to catching up and discussing everything.",
-        isYou: false,
-      },
-    ],
-  },
-  {
-    date: "10 Sep 2024",
-    events: [{ type: "video-call", text: "started a video call" }],
-    chats: [
-      {
-        sender: "Lawrence Patterson",
-        time: "6:25 PM",
-        text: "@wilson @jparker I have a new game plan",
-        isYou: true,
-      },
-      {
-        sender: "Jaden Parker",
-        time: "6:30 PM",
-        text: "Let’s discuss this tomorrow",
-        isYou: false,
-      },
-    ],
-  },
-];
+// const messages = [
+//   {
+//     date: "9 Sep 2024",
+//     events: [{ type: "notification", text: "Richard Wilson added You" }],
+//     chats: [
+//       {
+//         sender: "Conner Garcia",
+//         time: "6:00 PM",
+//         text: 'Hey guys! Don’t forget about our meeting next week! I’ll be waiting for you at the "Cozy Corner" café at 6:00 PM. Don’t be late!',
+//         isYou: false,
+//       },
+//       {
+//         sender: "Richard Wilson",
+//         time: "6:05 PM",
+//         text: "Absolutely. I’ll be there! Looking forward to catching up and discussing everything.",
+//         isYou: false,
+//       },
+//     ],
+//   },
+//   {
+//     date: "10 Sep 2024",
+//     events: [{ type: "video-call", text: "started a video call" }],
+//     chats: [
+//       {
+//         sender: "Lawrence Patterson",
+//         time: "6:25 PM",
+//         text: "@wilson @jparker I have a new game plan",
+//         isYou: true,
+//       },
+//       {
+//         sender: "Jaden Parker",
+//         time: "6:30 PM",
+//         text: "Let’s discuss this tomorrow",
+//         isYou: false,
+//       },
+//     ],
+//   },
+// ];
 
 function Chat() {
   const { socket } = useSocket();
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  const [messageInput, setMessageInput] = useState();
-  const [search, setSearch] = useState("");
+  const [selectedChat, setSelectedChat] = useState(null);
   const { user, isLoggedIn } = useAuth();
-  const debouncedSearch = useDebounce(search, 500);
+  const [messages, setMessages] = useState([
+    {
+      date: "9 Sep 2024",
+      events: [{ type: "notification", text: "Richard Wilson added You" }],
+      chats: [
+        {
+          sender: "Conner Garcia",
+          time: "6:00 PM",
+          text: 'Hey guys! Don’t forget about our meeting next week! I’ll be waiting for you at the "Cozy Corner" café at 6:00 PM. Don’t be late!',
+          isYou: false,
+        },
+        {
+          sender: "Richard Wilson",
+          time: "6:05 PM",
+          text: "Absolutely. I’ll be there! Looking forward to catching up and discussing everything.",
+          isYou: false,
+        },
+      ],
+    },
+  ]);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const {
     data: chatsData,
@@ -164,19 +110,6 @@ function Chat() {
     },
   });
 
-  const {
-    data: searchResults,
-    isLoading: searchLoading,
-    error: searchErr,
-  } = useQuery({
-    queryKey: ["chats", debouncedSearch],
-    queryFn: async () => {
-      const { data } = await axiosIns.get(`/chats/search?query=${debouncedSearch}`);
-      return data;
-    },
-    enabled: !!debouncedSearch,
-  });
-
   const sendMessage = (formdata) => {
     console.log(socket);
     if (!socket) {
@@ -184,20 +117,27 @@ function Chat() {
       return;
     }
 
-    const text=  formdata.get("text");
+    const text = formdata.get("text");
     if (!text) {
       console.log("Message is empty");
-      return addToast({title: "Message is empty", description:"You can not send empty messages",  color: "danger"});
+      return addToast({
+        title: "Message is empty",
+        description: "Cannot send empty messages",
+        color: "danger",
+      });
     }
 
-    console.log("Sending message", formdata.get("message"));
-    socket.emit("message", formdata.get("message"));
+    console.log("Sending message", text);
+    socket.emit("message", { receiver: "asdf", text }, (ack) => {
+      console.log(ack);
+      setMessages((prev) => [...prev, ack.message]);
+    });
   };
 
   useEffect(() => {
     if (!socket) return;
     socket.emit("user_online", {
-      userId: "12345",
+      userId: "6806a7d0d6f88e410971ee38",
     });
 
     socket.on("receive_message", (msg) => {
@@ -218,125 +158,26 @@ function Chat() {
       <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
         <div className="flex w-96">
           <Sidebar />
-          <ChatListPanel chats={chatsData?.chats} isLoading={chatsLoading} />
+          <ChatListPanel
+            chats={chatsData?.chats}
+            isLoading={chatsLoading}
+            setSelectedUser={setSelectedUser}
+          />
         </div>
 
         <div>
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
             <div className="flex items-center gap-2">
-              <div className="relative">
-                <Input
-                  placeholder="Search"
-                  variant="flat"
-                  className="w-64"
-                  radius="full"
-                  startContent={<Search size={16} />}
-                  value={search}
-                  onChange={(e) => {
-                    console.log(e.target.value);
-                    setSearch(e.target.value);
-                  }}
-                />
-
-                {(searchResults || searchLoading) && (
-                  <Listbox
-                    aria-label="search results"
-                    className="top-full left-0 absolute bg-stone-900 p-2 border border-default-200 rounded-xl mt-2 z-50"
-                  >
-                    {searchLoading ? (
-                      <ListboxItem
-                        aria-label="result"
-                        classNames={{
-                          title: "flex items-center justify-center p-4",
-                        }}
-                      >
-                        <Spinner size="lg" color="success" className="block" />
-                      </ListboxItem>
-                    ) : (
-                      <>
-                        <ListboxSection showDivider title="Chats">
-                          {searchResults.chats.length ? (
-                            searchResults?.chats?.map((chat, index) => (
-                              <ListboxItem
-                                key={index}
-                                aria-label="result"
-                                className="flex items-center gap-2 p-2 cursor-pointer"
-                              >
-                                <User
-                                  name={chat.chatName}
-                                  description={`@${chat?.username}`}
-                                  avatarProps={{
-                                    src: chat?.profile,
-                                    fallback: chat.chatName[0].toUpperCase(),
-                                    showFallback: true,
-                                    color: "success",
-                                  }}
-                                />
-                              </ListboxItem>
-                            ))
-                          ) : (
-                            <ListboxItem
-                              aria-label="result"
-                              classNames={{
-                                title: "flex items-center justify-center p-4",
-                              }}
-                            >
-                              No results found
-                            </ListboxItem>
-                          )}
-                        </ListboxSection>
-                        <ListboxSection title="Other Results">
-                          {searchResults.otherResults.length ? (
-                            searchResults?.otherResults?.map((chat, index) => (
-                              <ListboxItem
-                                key={index}
-                                aria-label="result"
-                                className="flex items-center gap-2 p-2 cursor-pointer"
-                              >
-                                <User
-                                  name={chat.chatName}
-                                  description={`@${chat?.username}`}
-                                  avatarProps={{
-                                    src: chat?.profile,
-                                    fallback: chat.chatName[0].toUpperCase(),
-                                    showFallback: true,
-                                    color: "success",
-                                  }}
-                                />
-                              </ListboxItem>
-                            ))
-                          ) : (
-                            <ListboxItem
-                              aria-label="result"
-                              classNames={{
-                                title: "flex items-center justify-center p-4",
-                              }}
-                            >
-                              No results found
-                            </ListboxItem>
-                          )}
-                        </ListboxSection>
-                      </>
-                    )}
-                  </Listbox>
-                )}
-              </div>
-
               <Button startContent={<Settings />} isIconOnly radius="full" />
               <Button startContent={<Bell />} isIconOnly radius="full" />
-              <Avatar
-                name={`${user?.firstName} ${user?.lastName}`}
-                description={`@${user?.username}`}
-                src={user?.profile}
-                color="success"
-                fallback={user?.firstName ?`${user?.firstName[0]} ${user?.lastName[0]}` : `${user?.username[0]}`}
-                className="ml-2 min-w-10"
-              />
+              <ProfileDropdown user={user}/>
+               
             </div>
           </div>
           <div className="flex gap-4 h-[85vh]">
             <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl">
+              <ChatHeader />
               <div className="flex-1 p-4 overflow-y-auto">
                 <div className="space-y-4">
                   {messages.map((day, index) => (

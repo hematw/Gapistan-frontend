@@ -2,7 +2,13 @@ import { Avatar } from "@heroui/avatar";
 import { Badge } from "@heroui/badge";
 import React from "react";
 
-function ChatItem({ name, isYou, lastMessage, unread }) {
+function ChatItem({
+  name,
+  isYou,
+  lastMessage,
+  unread,
+  profile = "https://100k-faces.glitch.me/random-image",
+}) {
   return (
     <div className="bg-white hover:bg-gray-100 dark:hover:bg-dark-2 dark:bg-dark shadow-lg rounded-2xl transition-all duration-200 cursor-pointer">
       <div className="flex items-center px-4 py-2">
@@ -13,9 +19,12 @@ function ChatItem({ name, isYou, lastMessage, unread }) {
           shape="circle"
         >
           <Avatar
-            src="https://100k-faces.glitch.me/random-image"
+            src={profile}
             name={name}
             size="md"
+            fallback={name[0].toUpperCase()}
+            showFallback={true}
+            color="success"
           />
         </Badge>
         <div className="ml-3">
