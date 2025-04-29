@@ -10,7 +10,7 @@ export default function ThemeSwitch() {
       defaultSelected
       isSelected={isDark}
       onClick={toggleTheme}
-      color="secondary"
+      color="warning"
       size="sm"
       onChange={toggleTheme}
       thumbIcon={({ isSelected, className }) =>

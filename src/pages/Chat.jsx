@@ -16,7 +16,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { addToast } from "@heroui/toast";
 import ChatHeader from "../components/ChatHeader";
 import ProfileDropdown from "../components/ProfileDropdown";
-
+import { Image } from "@heroui/image";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -126,12 +126,30 @@ function Chat() {
         color: "danger",
       });
     }
-
+    //  chatId, text, mediaType, reactions, senderId, receiverId
     console.log("Sending message", text);
-    socket.emit("message", { receiver: "asdf", text }, (ack) => {
-      console.log(ack);
-      setMessages((prev) => [...prev, ack.message]);
-    });
+    socket.emit(
+      "send_message",
+      {
+        text,
+        senderId: user._id,
+        chatId: selectedChat?._id,
+        receiverId: selectedUser?._id,
+      },
+      (ack) => {
+        console.log(ack);
+        setMessages((prev) => {
+          const x = [
+            {
+              ...prev[0],
+              chats: prev[0].chats.push(ack.message),
+            },
+          ];
+
+          return prev;
+        });
+      }
+    );
   };
 
   useEffect(() => {
@@ -142,6 +160,16 @@ function Chat() {
 
     socket.on("receive_message", (msg) => {
       console.log(msg);
+      setMessages((prev) => {
+        const x = [
+          {
+            ...prev[0],
+            chats: prev[0].chats.push(msg),
+          },
+        ];
+        console.log("X", x);
+        return prev;
+      });
     });
 
     return () => {
@@ -156,63 +184,82 @@ function Chat() {
   return (
     <>
       <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
-        <div className="flex w-96">
+        <div className="flex w-96 gap-4">
           <Sidebar />
           <ChatListPanel
             chats={chatsData?.chats}
             isLoading={chatsLoading}
             setSelectedUser={setSelectedUser}
+            setSelectedChat={setSelectedChat}
           />
         </div>
 
-        <div>
+        <div className="w-screen">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
             <div className="flex items-center gap-2">
               <Button startContent={<Settings />} isIconOnly radius="full" />
               <Button startContent={<Bell />} isIconOnly radius="full" />
-              <ProfileDropdown user={user}/>
-               
+              <ProfileDropdown user={user} />
             </div>
           </div>
-          <div className="flex gap-4 h-[85vh]">
+          <div className="flex gap-4 h-[86vh]">
             <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl">
-              <ChatHeader />
-              <div className="flex-1 p-4 overflow-y-auto">
-                <div className="space-y-4">
-                  {messages.map((day, index) => (
-                    <div key={index} className="space-y-1">
-                      <Chip className="flex m-auto my-2">{day.date}</Chip>
+              {selectedChat || selectedUser ? (
+                <>
+                  <ChatHeader
+                    selectedChat={selectedChat}
+                    setSelectedChat={setSelectedChat}
+                  />
+                  <div className="flex-1 p-4 overflow-y-auto">
+                    <div className="space-y-4">
+                      {messages.map((day, index) => (
+                        <div key={index} className="space-y-1">
+                          <Chip className="flex m-auto my-2">{day.date}</Chip>
 
-                      {day.events.map((event, i) => (
-                        <ChatEvent event={event} key={i} />
-                      ))}
+                          {day.events.map((event, i) => (
+                            <ChatEvent event={event} key={i} />
+                          ))}
 
-                      {day.chats.map((chat, i) => (
-                        <MessageBubble chat={chat} key={i} />
+                          {day.chats.map((chat, i) => (
+                            <MessageBubble chat={chat} key={i} />
+                          ))}
+                        </div>
                       ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="p-4 border-t">
-                <form action={sendMessage}>
-                  <div className="flex">
-                    <Input
-                      placeholder="Write a message..."
-                      variant="bordered"
-                      name="text"
-                    />
-                    <Button
-                      className="bg-limegreen ml-2 text-black"
-                      startContent={<Send />}
-                      isIconOnly
-                      type="submit"
-                    />
                   </div>
-                </form>
-              </div>
+
+                  <div className="p-4 border-t">
+                    <form action={sendMessage}>
+                      <div className="flex">
+                        <Input
+                          placeholder="Write a message..."
+                          variant="bordered"
+                          name="text"
+                        />
+                        <Button
+                          className="bg-limegreen ml-2 text-black"
+                          startContent={<Send />}
+                          isIconOnly
+                          type="submit"
+                        />
+                      </div>
+                    </form>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-1 items-center justify-center text-center text-gray-500 dark:text-gray-400 p-6">
+                  <div className="flex items-center justify-center flex-col">
+                    <Image src="/empty.png" width={100} />
+                    <p className="text-lg font-semibold mb-1 mt-6">
+                      No chat selected
+                    </p>
+                    <p className="text-sm text-gray-400 dark:text-gray-500">
+                      Select a conversation to start chatting with someone.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <RightSidebar members={members} files={files} />

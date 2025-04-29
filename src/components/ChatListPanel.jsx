@@ -36,7 +36,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
   }
 
   return (
-    <div className="space-y-3 px-4  w-80 max-h-full min-h-full overflow-auto">
+    <div className="space-y-3  w-80 max-h-full min-h-full overflow-auto">
       <div className="relative flex flex-col h-full">
         <Input
           fullWidth
@@ -50,8 +50,10 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
             setSearch(e.target.value);
           }}
         />
-        <div className="bg-white  mt-4 dark:bg-dark flex-1 min-h-0 overflow-auto flex flex-col gap-4 items-center shadow-lg rounded-2xl">
-          {searchResults || searchLoading ? (
+        {searchResults || searchLoading ? (
+          <div
+            className={`bg-white  mt-4 dark:bg-dark flex-1 min-h-0 overflow-auto flex flex-col gap-4 items-center shadow-lg rounded-2xl`}
+          >
             <Listbox
               aria-label="search results"
               className="rounded-xl z-50 mt-4 "
@@ -76,13 +78,13 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                           aria-label="result"
                           className="flex items-center gap-2 p-2 cursor-pointer rounded-none"
                           onPress={() => {
-                            setSelectedChat(chat)
-                            setSelectedUser(null)
+                            setSelectedChat(chat);
+                            setSelectedUser(null);
                           }}
                         >
                           <ChatItem
                             key={index}
-                            name={chat.chatName}
+                            chatName={chat.chatName}
                             isYou={chat.isYou}
                             unread={chat.unread}
                             lastMessage={chat.lastMessage}
@@ -121,8 +123,16 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                           aria-label="result"
                           className="flex items-center gap-2 p-2 cursor-pointer rounded-none"
                           onPress={() => {
-                            setSelectedUser(user)
-                            setSelectedChat(null)
+                            const newChat = {
+                              chatName: user.firstName
+                                ? `${user.firstName} ${user.lastName}`
+                                : user.username,
+                              status: user.status,
+                              profileImage: user.profileImage,
+                              username: user.username,
+                            };
+                            setSelectedUser(user);
+                            setSelectedChat(newChat);
                           }}
                         >
                           <User
@@ -152,33 +162,33 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                 </>
               )}
             </Listbox>
-          ) : chats.length ? (
+          </div>
+        ) : chats.length ? (
+          <div className="w-full flex flex-col gap-4 mt-4">
+            {chats.map((chat, index) => (
+              <ChatItem
+                key={index}
+                chatName={chat.chatName}
+                isYou={chat.isYou}
+                unread={chat.unread}
+                lastMessage={chat.lastMessage}
+                onClick={() => setSelectedChat(chat)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 items-center justify-center py-6 px-2 h-full">
             <div>
-              {chats.map((chat, index) => (
-                <ChatItem
-                  key={index}
-                  name={chat.name}
-                  isYou={chat.isYou}
-                  unread={chat.unread}
-                  lastMessage={chat.lastMessage}
-                  onClick={() => setSelectedChat(chat)}
-                />
-              ))}
+              <MessageCircleMore size={48} />
             </div>
-          ) : (
-            <div className="flex flex-col gap-4 items-center justify-center py-6 px-2 h-full">
-              <div>
-                <MessageCircleMore size={48} />
-              </div>
-              <div className="px-4 text-center ">
-                <h3 className="text-xl font-semibold  py-2">No Chats Yet...</h3>
-                <p className="text-sm text-default-400">
-                  The universe is waiting for you to say something! 🚀
-                </p>
-              </div>
+            <div className="px-4 text-center ">
+              <h3 className="text-xl font-semibold  py-2">No Chats Yet...</h3>
+              <p className="text-sm text-default-400">
+                The universe is waiting for you to say something! 🚀
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
