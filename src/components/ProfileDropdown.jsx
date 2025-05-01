@@ -36,11 +36,11 @@ function ProfileDropdown({ user }) {
           }
         }}
       >
-        <DropdownItem key="profile" startContent={<User size={16} />}>
-          Profile
-        </DropdownItem>
         <DropdownItem key="theme-switch">
           <ThemeSwitch />
+        </DropdownItem>
+        <DropdownItem key="profile" startContent={<User size={16} />}>
+          Profile
         </DropdownItem>
         <DropdownItem
           key="logout"

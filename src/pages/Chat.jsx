@@ -17,6 +17,7 @@ import { addToast } from "@heroui/toast";
 import ChatHeader from "../components/ChatHeader";
 import ProfileDropdown from "../components/ProfileDropdown";
 import { Image } from "@heroui/image";
+import { Spinner } from "@heroui/spinner";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -33,49 +34,10 @@ const files = [
   { type: "shared links", count: 47 },
 ];
 
-// const messages = [
-//   {
-//     date: "9 Sep 2024",
-//     events: [{ type: "notification", text: "Richard Wilson added You" }],
-//     chats: [
-//       {
-//         sender: "Conner Garcia",
-//         time: "6:00 PM",
-//         text: 'Hey guys! Don’t forget about our meeting next week! I’ll be waiting for you at the "Cozy Corner" café at 6:00 PM. Don’t be late!',
-//         isYou: false,
-//       },
-//       {
-//         sender: "Richard Wilson",
-//         time: "6:05 PM",
-//         text: "Absolutely. I’ll be there! Looking forward to catching up and discussing everything.",
-//         isYou: false,
-//       },
-//     ],
-//   },
-//   {
-//     date: "10 Sep 2024",
-//     events: [{ type: "video-call", text: "started a video call" }],
-//     chats: [
-//       {
-//         sender: "Lawrence Patterson",
-//         time: "6:25 PM",
-//         text: "@wilson @jparker I have a new game plan",
-//         isYou: true,
-//       },
-//       {
-//         sender: "Jaden Parker",
-//         time: "6:30 PM",
-//         text: "Let’s discuss this tomorrow",
-//         isYou: false,
-//       },
-//     ],
-//   },
-// ];
-
 function Chat() {
   const { socket } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
-  const { user, isLoggedIn } = useAuth();
+  const { user } = useAuth();
   const [messages, setMessages] = useState([
     {
       date: "9 Sep 2024",
@@ -109,6 +71,21 @@ function Chat() {
       return data;
     },
   });
+
+  const {
+    data: chatTimeline,
+    isLoading: chatTimelineLoading,
+    error: chatTimelineErr,
+  } = useQuery({
+    queryKey: ["chats", selectedChat?._id, "timeline"],
+    queryFn: async () => {
+      const { data } = await axiosIns.get(`/chats/${selectedChat?._id}`);
+      return data;
+    },
+    enabled: !!selectedChat?._id,
+  });
+
+  console.log(chatTimeline);
 
   const sendMessage = (formdata) => {
     console.log(socket);
@@ -155,20 +132,15 @@ function Chat() {
   useEffect(() => {
     if (!socket) return;
     socket.emit("user_online", {
-      userId: "6806a7d0d6f88e410971ee38",
+      userId: user._id,
     });
 
     socket.on("receive_message", (msg) => {
       console.log(msg);
       setMessages((prev) => {
-        const x = [
-          {
-            ...prev[0],
-            chats: prev[0].chats.push(msg),
-          },
-        ];
-        console.log("X", x);
-        return prev;
+        prev[0].chats.push(msg);
+
+        return [...prev];
       });
     });
 
@@ -211,22 +183,27 @@ function Chat() {
                     selectedChat={selectedChat}
                     setSelectedChat={setSelectedChat}
                   />
-                  <div className="flex-1 p-4 overflow-y-auto">
-                    <div className="space-y-4">
-                      {messages.map((day, index) => (
-                        <div key={index} className="space-y-1">
-                          <Chip className="flex m-auto my-2">{day.date}</Chip>
-
-                          {day.events.map((event, i) => (
-                            <ChatEvent event={event} key={i} />
-                          ))}
-
-                          {day.chats.map((chat, i) => (
-                            <MessageBubble chat={chat} key={i} />
-                          ))}
+                  <div className="flex-1 px-4 pb-6 overflow-y-auto">
+                    {chatTimelineLoading ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Spinner size="lg" color="success" className="block" />
+                      </div>
+                    ) : (
+                      chatTimeline.messages.map((activity, index) => (
+                        <div key={index} className="space-y-1.5">
+                          <div className="w-full text-center my-4">
+                            <Chip className="m-auto">{activity.label}</Chip>
+                          </div>
+                          {activity.items.map((item, index) => {
+                            if (item.contentType === "message") {
+                              return <MessageBubble chat={item} key={index} />;
+                            } else {
+                              return <ChatEvent event={item} key={index} />;
+                            }
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      ))
+                    )}
                   </div>
 
                   <div className="p-4 border-t">

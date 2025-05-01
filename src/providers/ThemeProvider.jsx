@@ -9,9 +9,16 @@ function ThemeProvider({ children }) {
   });
 
   const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-    localStorage.setItem("theme", theme === "light" ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+
+    // Handle the side-effect (class manipulation) right here
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
   };
 
   return (

@@ -10,7 +10,7 @@ function ChatItem({
   profile = "https://100k-faces.glitch.me/random-image",
   onClick,
 }) {
-  console.log("inside chat item", name, isYou, lastMessage, unread, profile);
+  console.log("inside chat item", chatName, isYou, lastMessage, unread, profile);
   return (
     <div
       className="w-full bg-white hover:bg-gray-100 dark:hover:bg-dark-2 dark:bg-dark shadow-lg rounded-2xl transition-all duration-200 cursor-pointer"
@@ -36,7 +36,7 @@ function ChatItem({
           <p className="line-clamp-1">{chatName}</p>
           <p className="text-gray-500 text-xs line-clamp-1">
             {isYou ? "You: " : ""}
-            {lastMessage}
+            {lastMessage?.text}
           </p>
         </div>
         {unread && <Badge color="primary" size="xs" className="ml-auto" />}
