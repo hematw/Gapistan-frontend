@@ -173,6 +173,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                 unread={chat.unread}
                 lastMessage={chat.lastMessage}
                 onClick={() => setSelectedChat(chat)}
+                isOnline={chat.isOnline}
               />
             ))}
           </div>

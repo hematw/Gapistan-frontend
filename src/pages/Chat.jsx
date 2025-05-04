@@ -1,16 +1,15 @@
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Chip } from "@heroui/chip";
 import { Bell, Send, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
 import MessageBubble from "../components/MessageBubble";
 import ChatEvent from "../components/ChatEvent";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import { useAuth } from "../contexts/AuthContext";
 import { addToast } from "@heroui/toast";
@@ -18,6 +17,13 @@ import ChatHeader from "../components/ChatHeader";
 import ProfileDropdown from "../components/ProfileDropdown";
 import { Image } from "@heroui/image";
 import { Spinner } from "@heroui/spinner";
+import { useDisclosure } from "@heroui/use-disclosure";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+} from "@heroui/modal";
+import Profile from "../components/Profile";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -38,27 +44,9 @@ function Chat() {
   const { socket } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
   const { user } = useAuth();
-  const [messages, setMessages] = useState([
-    {
-      date: "9 Sep 2024",
-      events: [{ type: "notification", text: "Richard Wilson added You" }],
-      chats: [
-        {
-          sender: "Conner Garcia",
-          time: "6:00 PM",
-          text: 'Hey guys! Don’t forget about our meeting next week! I’ll be waiting for you at the "Cozy Corner" café at 6:00 PM. Don’t be late!',
-          isYou: false,
-        },
-        {
-          sender: "Richard Wilson",
-          time: "6:05 PM",
-          text: "Absolutely. I’ll be there! Looking forward to catching up and discussing everything.",
-          isYou: false,
-        },
-      ],
-    },
-  ]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const queryClient = useQueryClient();
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const {
     data: chatsData,
@@ -87,6 +75,12 @@ function Chat() {
 
   console.log(chatTimeline);
 
+  const chatEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const sendMessage = (formdata) => {
     console.log(socket);
     if (!socket) {
@@ -95,7 +89,7 @@ function Chat() {
     }
 
     const text = formdata.get("text");
-    if (!text) {
+    if (!text.trim()) {
       console.log("Message is empty");
       return addToast({
         title: "Message is empty",
@@ -103,7 +97,7 @@ function Chat() {
         color: "danger",
       });
     }
-    //  chatId, text, mediaType, reactions, senderId, receiverId
+
     console.log("Sending message", text);
     socket.emit(
       "send_message",
@@ -113,41 +107,183 @@ function Chat() {
         chatId: selectedChat?._id,
         receiverId: selectedUser?._id,
       },
-      (ack) => {
-        console.log(ack);
-        setMessages((prev) => {
-          const x = [
-            {
-              ...prev[0],
-              chats: prev[0].chats.push(ack.message),
-            },
-          ];
+      ({ message, error, data }) => {
+        console.log(message, error, data);
+        if (!error) {
+          queryClient.setQueryData(
+            ["chats", selectedChat._id, "timeline"],
+            (oldData) => {
+              if (!oldData) return;
 
-          return prev;
-        });
+              const newMessages = [...oldData.messages];
+              const length = newMessages.length;
+
+              if (
+                length > 0 &&
+                newMessages[length - 1].label.toLowerCase() === "today"
+              ) {
+                const updatedItems = [
+                  ...newMessages[length - 1].items,
+                  { ...data, contentType: "message" },
+                ];
+                newMessages[length - 1] = {
+                  ...newMessages[length - 1],
+                  items: updatedItems,
+                };
+              } else {
+                newMessages.push({
+                  label: "Today",
+                  items: [{ ...data, contentType: "message" }],
+                });
+              }
+
+              return {
+                ...oldData,
+                messages: newMessages,
+              };
+            }
+          );
+
+          queryClient.setQueryData(["chats"], (prev) => {
+            if (!prev || !Array.isArray(prev.chats)) return prev;
+
+            const updatedChats = prev.chats.map((chat) => {
+              if (chat._id === data.chat) {
+                return {
+                  ...chat,
+                  lastMessage: data,
+                };
+              }
+              return chat;
+            });
+
+            return {
+              ...prev,
+              chats: updatedChats,
+            };
+          });
+          scrollToBottom();
+        }
       }
     );
   };
 
   useEffect(() => {
+    scrollToBottom();
+  }, [chatTimeline?.messages]);
+
+  useEffect(() => {
     if (!socket) return;
     socket.emit("user_online", {
       userId: user._id,
+      isOnline: true,
     });
 
-    socket.on("receive_message", (msg) => {
-      console.log(msg);
-      setMessages((prev) => {
-        prev[0].chats.push(msg);
+    socket.on("receive_message", (data) => {
+      console.log("📩 New message:", data);
+      console.log(selectedChat, data);
 
-        return [...prev];
+      const isSameChat = selectedChat?._id === data.chat;
+
+      if (isSameChat) {
+        console.log("was same chat 🆗");
+        queryClient.setQueryData(
+          ["chats", selectedChat._id, "timeline"],
+          (oldData) => {
+            if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+
+            const messages = [...oldData.messages];
+            const lastGroup = messages[messages.length - 1];
+
+            const isTodayGroup =
+              lastGroup?.label?.toLowerCase() === "today" &&
+              Array.isArray(lastGroup.items);
+
+            if (isTodayGroup) {
+              const updatedGroup = {
+                ...lastGroup,
+                items: [
+                  ...lastGroup.items,
+                  { ...data, contentType: "message" },
+                ],
+              };
+
+              messages[messages.length - 1] = updatedGroup;
+            } else {
+              messages.push({
+                label: "Today",
+                items: [{ ...data, contentType: "message" }],
+              });
+            }
+
+            return {
+              ...oldData,
+              messages,
+            };
+          }
+        );
+      }
+
+      console.log("was not same chat ❌");
+
+      queryClient.setQueryData(["chats"], (prev) => {
+        if (!prev || !Array.isArray(prev.chats)) return prev;
+
+        const updatedChats = prev.chats.map((chat) => {
+          if (chat._id === data.chat) {
+            return {
+              ...chat,
+              lastMessage: data,
+            };
+          }
+          return chat;
+        });
+
+        return {
+          ...prev,
+          chats: updatedChats,
+        };
+      });
+
+      scrollToBottom();
+    });
+
+    socket.on("update_status", ({ userId, isOnline }) => {
+      console.log("🟢 Status update for user:", userId);
+
+      queryClient.setQueryData(["chats"], (prev) => {
+        if (!prev?.chats) return prev;
+
+        const updatedChats = prev.chats.map((chat) => {
+          const updatedParticipants = chat.participants.map((participant) =>
+            participant._id === userId
+              ? {
+                  ...participant,
+                  isOnline,
+                  lastSeen: isOnline ? null : new Date().toISOString(),
+                }
+              : participant
+          );
+
+          const isUserInChat = chat.participants.some((p) => p._id === userId);
+          const newChatStatus =
+            !chat.isGroup && isUserInChat ? isOnline : chat.isOnline;
+
+          return {
+            ...chat,
+            participants: updatedParticipants,
+            isOnline: newChatStatus,
+          };
+        });
+
+        return { ...prev, chats: updatedChats };
       });
     });
 
     return () => {
       socket.off("receive_message");
     };
-  }, [socket]);
+  }, [queryClient, selectedChat, socket, user._id]);
 
   if (chatsLoading) {
     return <p className="text-2xl">Loading...</p>;
@@ -166,13 +302,25 @@ function Chat() {
           />
         </div>
 
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalBody>
+                  <Profile/>
+                </ModalBody>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+
         <div className="w-screen">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
             <div className="flex items-center gap-2">
               <Button startContent={<Settings />} isIconOnly radius="full" />
               <Button startContent={<Bell />} isIconOnly radius="full" />
-              <ProfileDropdown user={user} />
+              <ProfileDropdown user={user} onProfileClick={onOpen} />
             </div>
           </div>
           <div className="flex gap-4 h-[86vh]">
@@ -195,15 +343,16 @@ function Chat() {
                             <Chip className="m-auto">{activity.label}</Chip>
                           </div>
                           {activity.items.map((item, index) => {
-                            if (item.contentType === "message") {
-                              return <MessageBubble chat={item} key={index} />;
-                            } else {
+                            if (item.contentType !== "message") {
                               return <ChatEvent event={item} key={index} />;
+                            } else {
+                              return <MessageBubble chat={item} key={index} />;
                             }
                           })}
                         </div>
                       ))
                     )}
+                    <div ref={chatEndRef}></div>
                   </div>
 
                   <div className="p-4 border-t">
@@ -213,6 +362,7 @@ function Chat() {
                           placeholder="Write a message..."
                           variant="bordered"
                           name="text"
+                          autoComplete="off"
                         />
                         <Button
                           className="bg-limegreen ml-2 text-black"

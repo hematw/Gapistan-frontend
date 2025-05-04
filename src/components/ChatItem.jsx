@@ -9,6 +9,7 @@ function ChatItem({
   unread,
   profile = "https://100k-faces.glitch.me/random-image",
   onClick,
+  isOnline
 }) {
   console.log("inside chat item", chatName, isYou, lastMessage, unread, profile);
   return (
@@ -22,6 +23,7 @@ function ChatItem({
           content=""
           placement="bottom-right"
           shape="circle"
+          isInvisible={!isOnline}
         >
           <Avatar
             src={profile}
