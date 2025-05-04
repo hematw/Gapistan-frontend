@@ -8,15 +8,19 @@ import {
 import { Avatar } from "@heroui/avatar";
 import { LogOut, User } from "lucide-react";
 import ThemeSwitch from "./ThemeSwitch";
+import { useAuth } from "../contexts/AuthContext";
 
-function ProfileDropdown({ user }) {
+function ProfileDropdown({ user, onProfileClick }) {
+  const { logout } = useAuth();
   return (
-    <Dropdown>
+    <Dropdown size="xl">
       <DropdownTrigger>
         <Avatar
           name={`${user?.firstName} ${user?.lastName}`}
           description={`@${user?.username}`}
-          src={user?.profile}
+          src={
+            user?.profile ? import.meta.env.VITE_FILES_URL + user.profile : ""
+          }
           color="success"
           fallback={
             user?.firstName
@@ -39,7 +43,11 @@ function ProfileDropdown({ user }) {
         <DropdownItem key="theme-switch">
           <ThemeSwitch />
         </DropdownItem>
-        <DropdownItem key="profile" startContent={<User size={16} />}>
+        <DropdownItem
+          key="profile"
+          startContent={<User size={16} />}
+          onPress={onProfileClick}
+        >
           Profile
         </DropdownItem>
         <DropdownItem
@@ -47,6 +55,7 @@ function ProfileDropdown({ user }) {
           startContent={<LogOut size={16} />}
           color="danger"
           className="text-danger"
+          onPress={logout}
         >
           Logout
         </DropdownItem>

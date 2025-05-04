@@ -188,7 +188,7 @@ const Home = () => {
         </motion.div>
 
         <footer className="py-6 text-white/70 text-center">
-          <p>© 2023 Gapistan. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Gapistan. All rights reserved.</p>
           <div className="flex justify-center space-x-4 mt-4">
             <a href="#" className="hover:text-white transition-colors">
               Privacy
