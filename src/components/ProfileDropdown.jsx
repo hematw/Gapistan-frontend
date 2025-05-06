@@ -9,6 +9,7 @@ import { Avatar } from "@heroui/avatar";
 import { LogOut, User } from "lucide-react";
 import ThemeSwitch from "./ThemeSwitch";
 import { useAuth } from "../contexts/AuthContext";
+import getFileURL from "../utils/setFileURL";
 
 function ProfileDropdown({ user, onProfileClick }) {
   const { logout } = useAuth();
@@ -18,9 +19,7 @@ function ProfileDropdown({ user, onProfileClick }) {
         <Avatar
           name={`${user?.firstName} ${user?.lastName}`}
           description={`@${user?.username}`}
-          src={
-            user?.profile ? import.meta.env.VITE_FILES_URL + user.profile : ""
-          }
+          src={user?.profile ? getFileURL(user.profile) : ""}
           color="success"
           fallback={
             user?.firstName

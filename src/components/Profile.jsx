@@ -8,6 +8,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { AtSign, Mail, Pen, Phone, Text, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import getFileURL from "../utils/setFileURL";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -23,7 +24,7 @@ export default function Profile() {
   const { user, setUser } = useAuth();
   const [editMode, setEditMode] = useState(false);
   const [profilePreview, setProfilePreview] = useState(() => {
-    return user?.profile ? import.meta.env.VITE_FILES_URL + user.profile : "";
+    return user?.profile ? getFileURL(user.profile) : "";
   });
   const fileRef = useRef();
 
@@ -31,15 +32,18 @@ export default function Profile() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
+    setValue,
   } = useForm({
     resolver: zodResolver(profileSchema),
     defaultValues: user,
   });
+  
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setProfilePreview(URL.createObjectURL(file));
+      setValue("profile", e.target.files); // 👈 This line is the magic
     }
   };
 
@@ -64,8 +68,6 @@ export default function Profile() {
 
       setUser(resData);
       localStorage.setItem("user", JSON.stringify(resData));
-
-      alert("Profile updated successfully");
       setEditMode(false);
     } catch (error) {
       console.error(error);

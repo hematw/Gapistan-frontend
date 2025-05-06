@@ -8,6 +8,7 @@ import { Listbox, ListboxItem, ListboxSection } from "@heroui/listbox";
 import { Input } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
 import { User } from "@heroui/user";
+import getFileURL from "../utils/setFileURL";
 
 function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
   const [search, setSearch] = useState("");
@@ -91,16 +92,6 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                             profile={chat.profile}
                             onClick={() => setSelectedChat(chat)}
                           />
-                          {/* <User
-                          name={chat.chatName}
-                          description={`@${chat?.username}`}
-                          avatarProps={{
-                            src: chat?.profile,
-                            fallback: chat.chatName[0].toUpperCase(),
-                            showFallback: true,
-                            color: "success",
-                          }}
-                        /> */}
                         </ListboxItem>
                       ))
                     ) : (
@@ -174,6 +165,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                 lastMessage={chat.lastMessage}
                 onClick={() => setSelectedChat(chat)}
                 isOnline={chat.isOnline}
+                profile={getFileURL(chat.chatProfile)}
               />
             ))}
           </div>
