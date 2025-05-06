@@ -2,6 +2,7 @@ import { Button } from "@heroui/button";
 import { User } from "@heroui/user";
 import { ArrowLeft } from "lucide-react";
 import React from "react";
+import getFileURL from "../utils/setFileURL";
 
 function ChatHeader({ selectedChat, setSelectedChat }) {
   return (
@@ -16,7 +17,7 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
         name={selectedChat.chatName}
         description={`@${selectedChat.username}`}
         avatarProps={{
-          src: selectedChat.profileImage,
+          src: selectedChat.chatProfile? getFileURL(selectedChat.chatProfile): "",
           fallback: selectedChat?.chatName[0]?.toUpperCase(),
         }}
         classNames={{

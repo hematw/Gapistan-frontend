@@ -7,7 +7,7 @@ function ChatItem({
   isYou,
   lastMessage,
   unread,
-  profile = "https://100k-faces.glitch.me/random-image",
+  profile,
   onClick,
   isOnline
 }) {
@@ -37,7 +37,7 @@ function ChatItem({
         <div className="ml-3">
           <p className="line-clamp-1">{chatName}</p>
           <p className="text-gray-500 text-xs line-clamp-1">
-            {isYou ? "You: " : ""}
+            {lastMessage?.isYou ? "You: " : ""}
             {lastMessage?.text}
           </p>
         </div>
