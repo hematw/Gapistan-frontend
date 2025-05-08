@@ -5,7 +5,7 @@
 #### Messaging System: 
 1. Real-time text messaging using WebSockets. ✅ 
 2. Voice message recording & sending. 
-3. File sharing (images, documents, audio). 
+3. File sharing (images, documents, audio). ✅
 4. Message status (sent, delivered, seen).
 
 #### User Interaction: 
@@ -15,7 +15,7 @@
  
 #### Security & Data Protection: 
 1. End-to-end encryption for messages and files. 
-2. Data storage with MongoDB (chat history, media storage). 
+2. Data storage with MongoDB (chat history, media storage). ✅
 
 #### Admin & Moderation Panel: 
 1. User management (ban, mute, delete messages). 

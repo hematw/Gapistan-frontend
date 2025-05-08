@@ -26,7 +26,7 @@ export default function Profile() {
   const [profilePreview, setProfilePreview] = useState(() => {
     return user?.profile ? getFileURL(user.profile) : "";
   });
-  const fileRef = useRef();
+  const fileInputRef = useRef();
 
   const {
     register,
@@ -104,7 +104,7 @@ export default function Profile() {
                 size="sm"
                 radius="full"
                 startContent={<Pen />}
-                onPress={() => fileRef.current.click()}
+                onPress={() => fileInputRef.current.click()}
                 className="absolute top-0 left-0 w-24 h-24 opacity-50"
               />
             )}
@@ -114,7 +114,7 @@ export default function Profile() {
               {...register("profile")}
               onChange={handleImageChange}
               className="hidden"
-              ref={fileRef}
+              ref={fileInputRef}
             />
           </div>
 

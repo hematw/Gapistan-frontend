@@ -1,12 +1,32 @@
 import React from "react";
 import { Button } from "@heroui/button";
-import { Card, CardBody } from "@heroui/card";
+import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Tooltip } from "@heroui/tooltip";
 import { PhoneCall, Pin, Users, Video } from "lucide-react";
+import getFileURL from "../utils/setFileURL";
+import { Avatar } from "@heroui/avatar";
 
-function ChatActions() {
+function ChatActions({selectedChat}) {
   return (
     <Card className="bg-white dark:bg-dark shadow-lg">
+      <CardHeader>
+        <div className="flex items-center gap-4">
+          <Avatar size="lg" src={getFileURL(selectedChat?.chatProfile)} />
+          <div>
+            <h3 className="font-medium">{selectedChat?.chatName}</h3>
+            <p>
+              {selectedChat?.isOnline ? (
+                <span className="flex items-center gap-2 text-default-400">
+                  <span className="text-xs">🟢</span> Online
+                </span>
+              ) : (
+                // new Date(selectedChat.lastSeen).toLocaleString()
+                selectedChat?.lastSeen
+              )}
+            </p>
+          </div>
+        </div>
+      </CardHeader>
       <CardBody className="flex flex-row justify-between">
         <Tooltip content="Call" placement="top">
           <Button
