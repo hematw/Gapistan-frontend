@@ -1,8 +1,10 @@
-import Chat from "./pages/Chat";
-import SignIn from "./pages/SignIn";
-import SignUp from "./pages/SignUp";
-import Home from "./pages/Home";
-import ProtectedLayout from "./pages/ProtectedLayout";
+import { lazy } from "react";
+
+const Chat = lazy(() => import("./pages/Chat"));
+const SignIn = lazy(() => import("./pages/SignIn"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const Home = lazy(() => import("./pages/Home"));
+const ProtectedLayout = lazy(() => import("./pages/ProtectedLayout"));
 
 const router = [
   {

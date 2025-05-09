@@ -25,6 +25,7 @@ import { Card } from "@heroui/card";
 import SelectedFilesDrawer from "../components/SelectedFilesDrawer";
 import { Avatar } from "@heroui/avatar";
 import getFileURL from "../utils/setFileURL";
+import VoiceRecorder from "../components/VoiceRecorder";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -488,6 +489,12 @@ function Chat() {
                         />
                       </div>
                     </form>
+
+                    <VoiceRecorder onSend={(audioBlob) => {
+                      const formData = new FormData();
+                      formData.append("files", audioBlob);
+                      sendMessage(formData);
+                    }} />
                   </div>
                 </>
               ) : (
