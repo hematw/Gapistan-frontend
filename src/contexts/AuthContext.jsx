@@ -59,7 +59,7 @@ export default function AuthProvider({ children }) {
 
   async function signUp(values) {
     try {
-      const { data } = await axiosIns.post("/auth/register", values);
+      const { data } = await axiosIns.post("/auth/signup", values);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.createdUser));
       setUser(data.createdUser);
