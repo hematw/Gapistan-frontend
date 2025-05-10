@@ -46,6 +46,8 @@ function Chat() {
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [files, setFiles] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUser, setTypingUser] = useState(null);
 
   const {
     data: chatsData,
@@ -251,6 +253,22 @@ function Chat() {
     });
   };
 
+  const handleTypingEvent = (isTyping) => {
+    if (socket && selectedChat) {
+      socket.emit("typing", {
+        chatId: selectedChat._id,
+        userId: user._id,
+        isTyping,
+        timestamp: new Date().toISOString(),
+      });
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    handleTypingEvent(value.length > 0);
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [chatTimeline?.messages]);
@@ -363,6 +381,12 @@ function Chat() {
       });
     });
 
+    socket.on("typing", ({ chatId, userId, isTyping }) => {
+      if (chatId === selectedChat?._id && userId !== user._id) {
+        setTypingUser(isTyping ? userId : null);
+      }
+    });
+
     socket.onAny((eventName, args) => {
       console.log(eventName, args)
       if (["receive_message"].includes(eventName)) {
@@ -372,6 +396,7 @@ function Chat() {
 
     return () => {
       socket.off("receive_message");
+      socket.off("typing");
     };
   }, [queryClient, selectedChat, socket, user._id]);
 
@@ -476,6 +501,7 @@ function Chat() {
                               onPress={() => fileRef.current.click()}
                             />
                           }
+                          onChange={handleInputChange}
                         />
                         <Input
                           className="hidden"
@@ -496,6 +522,12 @@ function Chat() {
                         />
                       </div>
                     </form>
+
+                    {typingUser && (
+                      <div className="text-sm text-gray-500 italic mb-2">
+                        {selectedChat.chatName} is typing...
+                      </div>
+                    )}
 
                     <VoiceRecorder
                       onSend={(audioBlob) => {
