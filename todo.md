@@ -4,7 +4,7 @@
 
 #### Messaging System: 
 1. Real-time text messaging using WebSockets. ✅ 
-2. Voice message recording & sending. 
+2. Voice message recording & sending. ✅
 3. File sharing (images, documents, audio). ✅
 4. Message status (sent, delivered, seen).
 

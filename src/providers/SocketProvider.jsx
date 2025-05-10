@@ -2,15 +2,16 @@ import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { SocketContext } from "../contexts/SocketContext";
 
-
 let socketInstance = null;
 
 function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
 
+  const VITE_API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     if (!socketInstance && !socketInstance?.connected) {
-      socketInstance = io("http://localhost:3000/");
+      socketInstance = io(VITE_API_URL || "http://localhost:3000/");
       setSocket(socketInstance);
     }
 
