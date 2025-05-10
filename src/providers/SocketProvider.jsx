@@ -7,11 +7,11 @@ let socketInstance = null;
 function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
 
-  const VITE_API_URL = import.meta.env.VITE_API_URL;
+  const VITE_SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
   useEffect(() => {
     if (!socketInstance && !socketInstance?.connected) {
-      socketInstance = io(VITE_API_URL || "http://localhost:3000/");
+      socketInstance = io(VITE_SOCKET_URL || "http://localhost:3000/");
       setSocket(socketInstance);
     }
 
@@ -34,8 +34,15 @@ function SocketProvider({ children }) {
     };
   }, []);
 
+  const playSound = () => {
+    const audio = new Audio("/notification-sound.wav");
+    audio.play().catch(() => {
+      console.log("Audio initialized after user interaction.");
+    });
+  };
+
   return (
-    <SocketContext.Provider value={{ socket }}>
+    <SocketContext.Provider value={{ socket, playSound }}>
       {children}
     </SocketContext.Provider>
   );

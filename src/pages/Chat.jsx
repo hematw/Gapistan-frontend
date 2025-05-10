@@ -20,7 +20,6 @@ import { Spinner } from "@heroui/spinner";
 import { useDisclosure } from "@heroui/use-disclosure";
 import { Modal, ModalBody, ModalContent } from "@heroui/modal";
 import Profile from "../components/Profile";
-import { useForm } from "react-hook-form";
 import { Card } from "@heroui/card";
 import SelectedFilesDrawer from "../components/SelectedFilesDrawer";
 import { Avatar } from "@heroui/avatar";
@@ -43,7 +42,7 @@ const chatFiles = [
 ];
 
 function Chat() {
-  const { socket } = useSocket();
+  const { socket, playSound } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
   const { user } = useAuth();
   const [selectedUser, setSelectedUser] = useState(null);
@@ -366,6 +365,8 @@ function Chat() {
         return { ...prev, chats: updatedChats };
       });
     });
+
+    socket.onAny(()=>playSound())
 
     return () => {
       socket.off("receive_message");
