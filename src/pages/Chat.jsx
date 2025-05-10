@@ -114,7 +114,7 @@ function Chat() {
       "application/pdf",
     ];
 
-    console.log(file.type)
+    console.log(file.type);
     if (file && file.size > 0) {
       if (!allowedTypes.includes(file.type)) {
         return addToast({
@@ -423,7 +423,7 @@ function Chat() {
                       <div className="w-full h-full flex items-center justify-center">
                         <Spinner size="lg" color="success" className="block" />
                       </div>
-                    ) : (
+                    ) : chatTimeline?.messages ? (
                       chatTimeline.messages.map((activity, index) => (
                         <div key={index} className="space-y-1.5">
                           <div className="w-full text-center my-4">
@@ -440,6 +440,10 @@ function Chat() {
                           })}
                         </div>
                       ))
+                    ) : (
+                      <p className="text-center text-gray-500">
+                        No messages found.
+                      </p>
                     )}
                     <div ref={chatEndRef}></div>
                   </div>
@@ -490,11 +494,13 @@ function Chat() {
                       </div>
                     </form>
 
-                    <VoiceRecorder onSend={(audioBlob) => {
-                      const formData = new FormData();
-                      formData.append("files", audioBlob);
-                      sendMessage(formData);
-                    }} />
+                    <VoiceRecorder
+                      onSend={(audioBlob) => {
+                        const formData = new FormData();
+                        formData.append("files", audioBlob);
+                        sendMessage(formData);
+                      }}
+                    />
                   </div>
                 </>
               ) : (
@@ -512,7 +518,11 @@ function Chat() {
               )}
             </div>
 
-            <RightSidebar selectedChat={selectedChat} members={members} files={chatFiles} />
+            <RightSidebar
+              selectedChat={selectedChat}
+              members={members}
+              files={chatFiles}
+            />
           </div>
         </div>
       </div>
