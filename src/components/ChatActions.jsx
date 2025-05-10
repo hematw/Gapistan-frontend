@@ -6,7 +6,7 @@ import { PhoneCall, Pin, Users, Video } from "lucide-react";
 import getFileURL from "../utils/setFileURL";
 import { Avatar } from "@heroui/avatar";
 
-function ChatActions({selectedChat}) {
+function ChatActions({ selectedChat }) {
   return (
     <Card className="bg-white dark:bg-dark shadow-lg">
       <CardHeader>
@@ -25,6 +25,9 @@ function ChatActions({selectedChat}) {
               )}
             </p>
           </div>
+        </div>
+        <div>
+          <p>{selectedChat?.bio}</p>
         </div>
       </CardHeader>
       <CardBody className="flex flex-row justify-between">

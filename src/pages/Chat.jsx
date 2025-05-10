@@ -1,6 +1,6 @@
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Chip } from "@heroui/chip";
@@ -20,10 +20,7 @@ import { Spinner } from "@heroui/spinner";
 import { useDisclosure } from "@heroui/use-disclosure";
 import { Modal, ModalBody, ModalContent } from "@heroui/modal";
 import Profile from "../components/Profile";
-import { Card } from "@heroui/card";
 import SelectedFilesDrawer from "../components/SelectedFilesDrawer";
-import { Avatar } from "@heroui/avatar";
-import getFileURL from "../utils/setFileURL";
 import VoiceRecorder from "../components/VoiceRecorder";
 
 const members = [
@@ -366,7 +363,12 @@ function Chat() {
       });
     });
 
-    socket.onAny(()=>playSound())
+    socket.onAny((eventName, args) => {
+      console.log(eventName, args)
+      if (["receive_message"].includes(eventName)) {
+        playSound();
+      }
+    });
 
     return () => {
       socket.off("receive_message");

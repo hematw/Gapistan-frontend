@@ -35,7 +35,7 @@ function SocketProvider({ children }) {
   }, []);
 
   const playSound = () => {
-    const audio = new Audio("/notification-sound.wav");
+    const audio = new Audio("/notification-sound.mp3");
     audio.play().catch(() => {
       console.log("Audio initialized after user interaction.");
     });
