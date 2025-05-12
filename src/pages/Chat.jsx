@@ -104,6 +104,7 @@ function Chat() {
       "audio/mpeg",
       "audio/webm",
       "video/webm",
+      "video/mp4",
       "image/png",
       "image/jpeg",
       "application/pdf",
@@ -133,7 +134,7 @@ function Chat() {
         // uploadForm.append("file", file);
 
         const { data: uploadRes } = await axiosIns.post(
-          `/chats/${selectedChat?._id}/upload?receiver=${selectedUser._id}`,
+          `/chats/${selectedChat?._id}/upload?receiver=${selectedUser?._id}`,
           formdata,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -142,7 +143,7 @@ function Chat() {
 
         // Emit message with file
         socket.emit(
-          "send_message",
+          "send-message",
           {
             text,
             files: uploadRes.files, // URL from backend
@@ -163,7 +164,7 @@ function Chat() {
     } else {
       // === Text only ===
       socket.emit(
-        "send_message",
+        "send-message",
         {
           text,
           senderId: user._id,
@@ -173,6 +174,7 @@ function Chat() {
         handleSocketResponse
       );
     }
+    handleTypingEvent(false);
     setFiles([]);
   };
 
@@ -272,15 +274,19 @@ function Chat() {
 
   useEffect(() => {
     if (!socket) return;
-    socket.emit("user_online", {
+    socket.emit("user-online", {
       userId: user._id,
       isOnline: true,
     });
 
-    socket.on("receive_message", (data) => {
+    socket.on("message-received", (data) => {
       console.log("📩 New message:", data);
       console.log(selectedChat, data);
 
+      const messageId = data?._id;
+
+      socket.emit("message-delivered", { messageId });
+      console.log("deliver event fired")
       const isSameChat = selectedChat?._id === data.chat;
 
       if (isSameChat) {
@@ -346,7 +352,7 @@ function Chat() {
       scrollToBottom();
     });
 
-    socket.on("update_status", ({ userId, isOnline }) => {
+    socket.on("update-status", ({ userId, isOnline }) => {
       console.log("🟢 Status update for user:", userId);
 
       queryClient.setQueryData(["chats"], (prev) => {
@@ -384,18 +390,23 @@ function Chat() {
       }
     });
 
+
     socket.onAny((eventName, args) => {
       console.log(eventName, args);
-      if (["receive_message"].includes(eventName)) {
+      if (["message-received"].includes(eventName)) {
         playSound();
       }
     });
 
+    if (selectedChat) {
+      socket.emit("mark-as-seen", { chatId: selectedChat._id });
+    }
+
     return () => {
-      socket.off("receive_message");
+      socket.off("message-received");
       socket.off("typing");
     };
-  }, [queryClient, selectedChat, socket, user._id]);
+  }, [playSound, queryClient, selectedChat, chatTimeline, socket, user._id]);
 
   if (chatsLoading) {
     return <p className="text-2xl">Loading...</p>;
