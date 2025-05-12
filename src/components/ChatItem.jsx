@@ -4,14 +4,12 @@ import React from "react";
 
 function ChatItem({
   chatName,
-  isYou,
   lastMessage,
   unread,
   profile,
   onClick,
-  isOnline
+  isOnline,
 }) {
-  console.log("inside chat item", chatName, isYou, lastMessage, unread, profile);
   return (
     <div
       className="w-full bg-white hover:bg-gray-100 dark:hover:bg-dark-2 dark:bg-dark shadow-lg rounded-2xl transition-all duration-200 cursor-pointer"

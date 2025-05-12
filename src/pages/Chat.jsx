@@ -19,6 +19,8 @@ import VoiceRecorder from "../components/VoiceRecorder";
 import NoChat from "../components/NoChat";
 import MessageForm from "../components/MessageForm";
 import ChatTimeline from "../components/ChatTimeline";
+import useChatSocket from "../hooks/useChatSocket";
+import ProfileModal from "../components/ProfileModal";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -43,7 +45,6 @@ function Chat() {
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [files, setFiles] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
   const [typingUser, setTypingUser] = useState(null);
 
   const {
@@ -70,8 +71,6 @@ function Chat() {
     },
     enabled: !!selectedChat?._id,
   });
-
-  console.log(chatTimeline);
 
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
@@ -272,141 +271,16 @@ function Chat() {
     scrollToBottom();
   }, [chatTimeline?.messages]);
 
-  useEffect(() => {
-    if (!socket) return;
-    socket.emit("user-online", {
-      userId: user._id,
-      isOnline: true,
-    });
-
-    socket.on("message-received", (data) => {
-      console.log("📩 New message:", data);
-      console.log(selectedChat, data);
-
-      const messageId = data?._id;
-
-      socket.emit("message-delivered", { messageId });
-      console.log("deliver event fired")
-      const isSameChat = selectedChat?._id === data.chat;
-
-      if (isSameChat) {
-        console.log("was same chat 🆗");
-        queryClient.setQueryData(
-          ["chats", selectedChat._id, "timeline"],
-          (oldData) => {
-            if (!oldData || !Array.isArray(oldData.messages)) return oldData;
-
-            const messages = [...oldData.messages];
-            const lastGroup = messages[messages.length - 1];
-
-            const isTodayGroup =
-              lastGroup?.label?.toLowerCase() === "today" &&
-              Array.isArray(lastGroup.items);
-
-            if (isTodayGroup) {
-              const updatedGroup = {
-                ...lastGroup,
-                items: [
-                  ...lastGroup.items,
-                  { ...data, contentType: "message" },
-                ],
-              };
-
-              messages[messages.length - 1] = updatedGroup;
-            } else {
-              messages.push({
-                label: "Today",
-                items: [{ ...data, contentType: "message" }],
-              });
-            }
-
-            return {
-              ...oldData,
-              messages,
-            };
-          }
-        );
-      }
-
-      console.log("was not same chat ❌");
-
-      queryClient.setQueryData(["chats"], (prev) => {
-        if (!prev || !Array.isArray(prev.chats)) return prev;
-
-        const updatedChats = prev.chats.map((chat) => {
-          if (chat._id === data.chat) {
-            return {
-              ...chat,
-              lastMessage: data,
-            };
-          }
-          return chat;
-        });
-
-        return {
-          ...prev,
-          chats: updatedChats,
-        };
-      });
-
-      scrollToBottom();
-    });
-
-    socket.on("update-status", ({ userId, isOnline }) => {
-      console.log("🟢 Status update for user:", userId);
-
-      queryClient.setQueryData(["chats"], (prev) => {
-        if (!prev?.chats) return prev;
-
-        const updatedChats = prev.chats.map((chat) => {
-          const updatedParticipants = chat.participants.map((participant) =>
-            participant._id === userId
-              ? {
-                  ...participant,
-                  isOnline,
-                  lastSeen: isOnline ? null : new Date().toISOString(),
-                }
-              : participant
-          );
-
-          const isUserInChat = chat.participants.some((p) => p._id === userId);
-          const newChatStatus =
-            !chat.isGroup && isUserInChat ? isOnline : chat.isOnline;
-
-          return {
-            ...chat,
-            participants: updatedParticipants,
-            isOnline: newChatStatus,
-          };
-        });
-
-        return { ...prev, chats: updatedChats };
-      });
-    });
-
-    socket.on("typing", ({ chatId, userId, isTyping }) => {
-      if (chatId === selectedChat?._id && userId !== user._id) {
-        setTypingUser(isTyping ? userId : null);
-      }
-    });
-
-
-    socket.onAny((eventName, args) => {
-      console.log(eventName, args);
-      if (["message-received"].includes(eventName)) {
-        playSound();
-      }
-    });
-
-    if (selectedChat) {
-      socket.emit("mark-as-seen", { chatId: selectedChat._id });
-    }
-
-    return () => {
-      socket.off("message-received");
-      socket.off("typing");
-    };
-  }, [playSound, queryClient, selectedChat, chatTimeline, socket, user._id]);
+  useChatSocket({
+    socket,
+    user,
+    selectedChat,
+    chatTimeline,
+    queryClient,
+    playSound,
+    scrollToBottom,
+    setTypingUser,
+  });
 
   if (chatsLoading) {
     return <p className="text-2xl">Loading...</p>;
@@ -425,17 +299,7 @@ function Chat() {
           />
         </div>
 
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-          <ModalContent>
-            {(onClose) => (
-              <>
-                <ModalBody>
-                  <Profile />
-                </ModalBody>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
+        <ProfileModal isOpen={isOpen} onOpenChange={onOpenChange} />
 
         <div className="w-screen">
           <div className="flex justify-between items-center mb-4">

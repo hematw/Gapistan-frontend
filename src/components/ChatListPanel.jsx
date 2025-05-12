@@ -47,7 +47,6 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
           startContent={<Search size={16} />}
           value={search}
           onChange={(e) => {
-            console.log(e.target.value);
             setSearch(e.target.value);
           }}
         />

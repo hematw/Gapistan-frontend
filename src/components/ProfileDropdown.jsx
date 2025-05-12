@@ -29,16 +29,7 @@ function ProfileDropdown({ user, onProfileClick }) {
           className="ml-2 min-w-10"
         />
       </DropdownTrigger>
-      <DropdownMenu
-        aria-label="User Dropdown"
-        onAction={(key) => {
-          if (key === "profile") {
-            console.log("Profile clicked");
-          } else if (key === "logout") {
-            console.log("Logout clicked");
-          }
-        }}
-      >
+      <DropdownMenu aria-label="User Dropdown">
         <DropdownItem key="theme-switch">
           <ThemeSwitch />
         </DropdownItem>
