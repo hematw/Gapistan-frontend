@@ -1,7 +1,6 @@
 import React from "react";
 import ThemeProvider from "./ThemeProvider";
 import { HeroUIProvider } from "@heroui/system";
-import SocketProvider from "./SocketProvider";
 import { ToastProvider } from "@heroui/toast";
 import AuthProvider from "@/contexts/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -30,7 +29,7 @@ function Providers({ children }) {
                 timeout: "3000",
               }}
             />
-            <SocketProvider>{children}</SocketProvider>
+            {children}
           </HeroUIProvider>
         </AuthProvider>
       </QueryClientProvider>

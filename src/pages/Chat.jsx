@@ -1,27 +1,24 @@
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
 import { useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
-import { Chip } from "@heroui/chip";
-import { Bell, Paperclip, Send, Settings, XCircle } from "lucide-react";
+import { Bell, Settings } from "lucide-react";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
-import MessageBubble from "../components/MessageBubble";
-import ChatEvent from "../components/ChatEvent";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import { useAuth } from "../contexts/AuthContext";
 import { addToast } from "@heroui/toast";
 import ChatHeader from "../components/ChatHeader";
 import ProfileDropdown from "../components/ProfileDropdown";
-import { Image } from "@heroui/image";
-import { Spinner } from "@heroui/spinner";
 import { useDisclosure } from "@heroui/use-disclosure";
 import { Modal, ModalBody, ModalContent } from "@heroui/modal";
 import Profile from "../components/Profile";
 import SelectedFilesDrawer from "../components/SelectedFilesDrawer";
 import VoiceRecorder from "../components/VoiceRecorder";
+import NoChat from "../components/NoChat";
+import MessageForm from "../components/MessageForm";
+import ChatTimeline from "../components/ChatTimeline";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -136,7 +133,7 @@ function Chat() {
         // uploadForm.append("file", file);
 
         const { data: uploadRes } = await axiosIns.post(
-          `/chats/${selectedChat?._id}/upload`,
+          `/chats/${selectedChat?._id}/upload?receiver=${selectedUser._id}`,
           formdata,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -388,7 +385,7 @@ function Chat() {
     });
 
     socket.onAny((eventName, args) => {
-      console.log(eventName, args)
+      console.log(eventName, args);
       if (["receive_message"].includes(eventName)) {
         playSound();
       }
@@ -446,35 +443,11 @@ function Chat() {
                     selectedChat={selectedChat}
                     setSelectedChat={setSelectedChat}
                   />
-                  <div className="flex-1 px-4 pb-6 overflow-y-auto">
-                    {chatTimelineLoading ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Spinner size="lg" color="success" className="block" />
-                      </div>
-                    ) : chatTimeline?.messages ? (
-                      chatTimeline.messages.map((activity, index) => (
-                        <div key={index} className="space-y-1.5">
-                          <div className="w-full text-center my-4">
-                            <Chip className="m-auto">{activity.label}</Chip>
-                          </div>
-                          {activity.items.map((item, index) => {
-                            if (item.contentType !== "message") {
-                              return <ChatEvent event={item} key={index} />;
-                            } else {
-                              return (
-                                <MessageBubble message={item} key={index} />
-                              );
-                            }
-                          })}
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-gray-500">
-                        No messages found.
-                      </p>
-                    )}
-                    <div ref={chatEndRef}></div>
-                  </div>
+                  <ChatTimeline
+                    chatEndRef={chatEndRef}
+                    chatTimeline={chatTimeline}
+                    chatTimelineLoading={chatTimelineLoading}
+                  />
 
                   <div className="p-4 border-t relative">
                     {files.length > 0 && (
@@ -484,44 +457,12 @@ function Chat() {
                       />
                     )}
 
-                    <form action={sendMessage}>
-                      <div className="flex">
-                        <Input
-                          placeholder="Write a message..."
-                          variant="bordered"
-                          name="text"
-                          autoComplete="off"
-                          classNames={{
-                            inputWrapper: "pr-0",
-                          }}
-                          endContent={
-                            <Button
-                              isIconOnly
-                              startContent={<Paperclip />}
-                              onPress={() => fileRef.current.click()}
-                            />
-                          }
-                          onChange={handleInputChange}
-                        />
-                        <Input
-                          className="hidden"
-                          type="file"
-                          multiple={true}
-                          ref={fileRef}
-                          placeholder="Write a message..."
-                          variant="bordered"
-                          name="files"
-                          accept="audio/*,image/*,video/*,application/pdf"
-                          onChange={handleFileChange}
-                        />
-                        <Button
-                          className="bg-limegreen ml-2 text-black"
-                          startContent={<Send />}
-                          isIconOnly
-                          type="submit"
-                        />
-                      </div>
-                    </form>
+                    <MessageForm
+                      sendMessage={sendMessage}
+                      handleFileChange={handleFileChange}
+                      handleInputChange={handleInputChange}
+                      fileRef={fileRef}
+                    />
 
                     {typingUser && (
                       <div className="text-sm text-gray-500 italic mb-2">
@@ -539,17 +480,7 @@ function Chat() {
                   </div>
                 </>
               ) : (
-                <div className="flex flex-1 items-center justify-center text-center text-gray-500 dark:text-gray-400 p-6">
-                  <div className="flex items-center justify-center flex-col">
-                    <Image src="/empty.png" width={100} />
-                    <p className="text-lg font-semibold mb-1 mt-6">
-                      No chat selected
-                    </p>
-                    <p className="text-sm text-gray-400 dark:text-gray-500">
-                      Select a conversation to start chatting with someone.
-                    </p>
-                  </div>
-                </div>
+                <NoChat />
               )}
             </div>
 

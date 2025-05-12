@@ -1,0 +1,54 @@
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
+import { Paperclip, Send } from "lucide-react";
+import React from "react";
+
+function MessageForm({
+  sendMessage,
+  handleFileChange,
+  fileRef,
+  handleInputChange,
+}) {
+  return (
+    <form action={sendMessage}>
+      <div className="flex">
+        <Input
+          placeholder="Write a message..."
+          variant="bordered"
+          name="text"
+          autoComplete="off"
+          classNames={{
+            inputWrapper: "pr-0",
+          }}
+          endContent={
+            <Button
+              isIconOnly
+              startContent={<Paperclip />}
+              onPress={() => fileRef.current.click()}
+            />
+          }
+          onChange={handleInputChange}
+        />
+        <Input
+          className="hidden"
+          type="file"
+          multiple={true}
+          ref={fileRef}
+          placeholder="Write a message..."
+          variant="bordered"
+          name="files"
+          accept="audio/*,image/*,video/*,application/pdf"
+          onChange={handleFileChange}
+        />
+        <Button
+          className="bg-limegreen ml-2 text-black"
+          startContent={<Send />}
+          isIconOnly
+          type="submit"
+        />
+      </div>
+    </form>
+  );
+}
+
+export default MessageForm;
