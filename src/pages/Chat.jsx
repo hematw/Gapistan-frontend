@@ -21,6 +21,7 @@ import MessageForm from "../components/MessageForm";
 import ChatTimeline from "../components/ChatTimeline";
 import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
+import useSeenHandler from "../hooks/useSeenHandler";
 
 const members = [
   { id: 1, name: "Richard Wilson", status: "online" },
@@ -74,6 +75,13 @@ function Chat() {
 
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
+
+  useSeenHandler({
+    messagesEndRef: chatEndRef,
+    socket,
+    userId: user._id,
+    selectedChat,
+  });
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });

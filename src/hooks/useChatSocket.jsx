@@ -19,76 +19,52 @@ const useChatSocket = ({
     });
 
     const handleMessageReceived = (data) => {
-      console.log("📩 New message:", data);
-      console.log(selectedChat, data);
-
       const messageId = data?._id;
+      // const isSameChat = selectedChat?._id === data.chat;
 
       socket.emit("message-delivered", { messageId });
-      console.log("deliver event fired");
-      const isSameChat = selectedChat?._id === data.chat;
 
-      if (isSameChat) {
-        console.log("was same chat 🆗");
-        queryClient.setQueryData(
-          ["chats", selectedChat._id, "timeline"],
-          (oldData) => {
-            if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+      // if (isSameChat) {
+      queryClient.setQueryData(["chats", data.chat, "timeline"], (oldData) => {
+        if (!oldData || !Array.isArray(oldData.messages)) return oldData;
 
-            const messages = [...oldData.messages];
-            const lastGroup = messages[messages.length - 1];
+        const messages = [...oldData.messages];
+        const lastGroup = messages[messages.length - 1];
+        const isTodayGroup =
+          lastGroup?.label?.toLowerCase() === "today" &&
+          Array.isArray(lastGroup.items);
 
-            const isTodayGroup =
-              lastGroup?.label?.toLowerCase() === "today" &&
-              Array.isArray(lastGroup.items);
+        if (isTodayGroup) {
+          const updatedGroup = {
+            ...lastGroup,
+            items: [...lastGroup.items, { ...data, contentType: "message" }],
+          };
+          messages[messages.length - 1] = updatedGroup;
+        } else {
+          messages.push({
+            label: "Today",
+            items: [{ ...data, contentType: "message" }],
+          });
+        }
 
-            if (isTodayGroup) {
-              const updatedGroup = {
-                ...lastGroup,
-                items: [
-                  ...lastGroup.items,
-                  { ...data, contentType: "message" },
-                ],
-              };
-
-              messages[messages.length - 1] = updatedGroup;
-            } else {
-              messages.push({
-                label: "Today",
-                items: [{ ...data, contentType: "message" }],
-              });
-            }
-
-            return {
-              ...oldData,
-              messages,
-            };
-          }
-        );
-      }
-
-      console.log("was not same chat ❌");
+        return { ...oldData, messages };
+      });
+      // }
+      //  else {
+      //   queryClient.invalidateQueries(["chats", data.chat, "timeline"]);
+      // }
 
       queryClient.setQueryData(["chats"], (prev) => {
         if (!prev || !Array.isArray(prev.chats)) return prev;
 
-        const updatedChats = prev.chats.map((chat) => {
-          if (chat._id === data.chat) {
-            return {
-              ...chat,
-              lastMessage: data,
-            };
-          }
-          return chat;
-        });
+        const updatedChats = prev.chats.map((chat) =>
+          chat._id === data.chat ? { ...chat, lastMessage: data } : chat
+        );
 
-        return {
-          ...prev,
-          chats: updatedChats,
-        };
+        return { ...prev, chats: updatedChats };
       });
 
-      scrollToBottom();
+      scrollToBottom?.();
     };
 
     const handleStatusUpdate = ({ userId, isOnline }) => {
@@ -136,14 +112,55 @@ const useChatSocket = ({
       }
     };
 
+    const handleMessageDelivery = ({ chatId, messageIds }) => {
+      console.log("💠 Delivered messages:", messageIds, chatId);
+
+      queryClient.setQueryData(["chats", chatId, "timeline"], (oldData) => {
+        if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+
+        const updatedMessages = oldData.messages.map((group) => {
+          if (!Array.isArray(group.items)) return group;
+
+          const updatedItems = group.items.map((msg) => {
+            if (messageIds.includes(msg._id)) {
+              return { ...msg, status: "delivered" };
+            }
+            return msg;
+          });
+
+          return { ...group, items: updatedItems };
+        });
+
+        return { ...oldData, messages: updatedMessages };
+      });
+    };
+
+    socket.on("message-seen", ({ chatId, messageIds }) => {
+      queryClient.setQueryData(["chats", chatId, "timeline"], (oldData) => {
+        if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+
+        const updatedMessages = oldData.messages.map((group) => {
+          if (!Array.isArray(group.items)) return group;
+
+          const updatedItems = group.items.map((msg) => {
+            if (messageIds.includes(msg._id)) {
+              return { ...msg, status: "seen" };
+            }
+            return msg;
+          });
+
+          return { ...group, items: updatedItems };
+        });
+
+        return { ...oldData, messages: updatedMessages };
+      });
+    });
+
+    socket.on("messages-delivered", handleMessageDelivery);
     socket.on("message-received", handleMessageReceived);
     socket.on("update-status", handleStatusUpdate);
     socket.on("typing", handleTyping);
     socket.onAny(handleAnyEvent);
-
-    if (selectedChat) {
-      socket.emit("mark-as-seen", { chatId: selectedChat._id });
-    }
 
     return () => {
       socket.off("message-received", handleMessageReceived);
@@ -151,7 +168,16 @@ const useChatSocket = ({
       socket.off("typing", handleTyping);
       socket.offAny(handleAnyEvent);
     };
-  }, [playSound, queryClient, selectedChat, chatTimeline, socket, user._id, scrollToBottom, setTypingUser]);
+  }, [
+    playSound,
+    queryClient,
+    selectedChat,
+    chatTimeline,
+    socket,
+    user._id,
+    scrollToBottom,
+    setTypingUser,
+  ]);
 };
 
 export default useChatSocket;

@@ -128,7 +128,7 @@ function MessageBubble({ message }) {
           <p className="text-xs flex items-center">
             <span>
               {message.status === "seen" ? (
-                <CheckCheck size={20} color="#004c8b" />
+                <CheckCheck size={20} color="#018dff" />
               ) : message.status === "delivered" ? (
                 <CheckCheck size={20} />
               ) : (
