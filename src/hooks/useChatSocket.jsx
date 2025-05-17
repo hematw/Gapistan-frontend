@@ -135,6 +135,31 @@ const useChatSocket = ({
       });
     };
 
+    const handleNewChat = (chat) => {
+      console.log("📦🎁", chat);
+      queryClient.setQueryData(["chats"], (prev) => {
+        if (!prev || !Array.isArray(prev.chats)) {
+          return {
+            chats: [chat],
+            total: 1,
+            page: 1,
+          };
+        }
+
+        // Optional: check for duplication before adding
+        const alreadyExists = prev.chats.some((c) => c._id === chat._id);
+        if (alreadyExists) return prev;
+
+        const updatedChats = [chat, ...prev.chats];
+
+        return {
+          ...prev,
+          chats: updatedChats,
+          total: prev.total + 1,
+        };
+      });
+    };
+
     socket.on("message-seen", ({ chatId, messageIds }) => {
       queryClient.setQueryData(["chats", chatId, "timeline"], (oldData) => {
         if (!oldData || !Array.isArray(oldData.messages)) return oldData;
@@ -160,6 +185,7 @@ const useChatSocket = ({
     socket.on("message-received", handleMessageReceived);
     socket.on("update-status", handleStatusUpdate);
     socket.on("typing", handleTyping);
+    socket.on("new-chat", handleNewChat);
     socket.onAny(handleAnyEvent);
 
     return () => {

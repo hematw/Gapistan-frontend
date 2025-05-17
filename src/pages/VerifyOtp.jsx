@@ -16,7 +16,8 @@ export default function VerifyOtp() {
     }
   });
 
-  const handleVerify = async () => {
+  const handleVerify = async (e) => {
+    e.preventDefault()
     const pendingSignUp = JSON.parse(localStorage.getItem("pendingSignUp"));
 
     try {
@@ -28,7 +29,7 @@ export default function VerifyOtp() {
 
       // Signup only after OTP is verified
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.createdUser));
+      localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.removeItem("pendingSignUp");
 
       addToast({ title: "Signup Successful", color: "success" });

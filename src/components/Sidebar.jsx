@@ -28,15 +28,47 @@ import { Input } from "@heroui/input";
 import { useRef, useState } from "react";
 import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import getFileURL from "../utils/setFileURL";
+import { addToast } from "@heroui/toast";
 
 function Sidebar() {
   const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
 
   const [profilePreview, setProfilePreview] = useState();
   const fileInputRef = useRef();
+  const queryClient = useQueryClient();
+
+  const createGroup = async (formData) => {
+    const { data } = await axiosIns.post("/chats/group", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return data;
+  };
+
+  const { mutate, isLoading } = useMutation({
+    mutationFn: createGroup,
+    onSuccess: (data) => {
+      queryClient.setQueryData(["chats"], (prev) => {
+        if (!prev || !Array.isArray(prev.chats)) return prev;
+
+        const updatedChats = [...prev.chats];
+        updatedChats.unshift(data);
+        return { ...prev, chats: updatedChats };
+      });
+    },
+    onError: (error) => {
+      console.log(error);
+      addToast({
+        title: "Error creating group",
+        description: error.response?.data?.message,
+        color: "danger",
+      });
+    },
+  });
 
   const { data: users } = useQuery({
     queryKey: ["users"],
@@ -54,19 +86,8 @@ function Sidebar() {
   };
 
   const submitHandler = async (formData) => {
-    console.log(formData.get("chatName"));
-    console.log(formData.get("profile"));
-    console.log(formData.get("members"));
-    try {
-      const { data } = await axiosIns.post("/chats/group", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-    }
+    mutate(formData);
+    onClose();
   };
 
   return (
@@ -245,7 +266,7 @@ function Sidebar() {
                     <Button color="danger" onPress={onClose}>
                       Cancel
                     </Button>
-                    <Button color="success" type="submit">
+                    <Button color="success" type="submit" isLoading={isLoading}>
                       Create
                     </Button>
                   </ModalFooter>

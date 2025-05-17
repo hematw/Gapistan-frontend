@@ -158,7 +158,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
             {chats.map((chat, index) => (
               <ChatItem
                 key={index}
-                chatName={chat.chatName}
+                chatName={chat.chatName ||chat.username}
                 isYou={chat.isYou}
                 unread={chat.unread}
                 lastMessage={chat.lastMessage}

@@ -27,7 +27,7 @@ function ChatItem({
             src={profile}
             name={chatName}
             size="md"
-            fallback={chatName[0].toUpperCase()}
+            fallback={chatName?.[0].toUpperCase()}
             showFallback={true}
             color="success"
           />
