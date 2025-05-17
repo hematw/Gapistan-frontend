@@ -60,10 +60,9 @@ export default function AuthProvider({ children }) {
   async function signUp(values) {
     try {
       const { data } = await axiosIns.post("/auth/signup", values);
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.createdUser));
-      setUser(data.createdUser);
-      navigate("/chat");
+      localStorage.setItem("pendingSignUp", JSON.stringify(data));
+      // setUser(data.createdUser);
+      navigate("/verify-otp");
     } catch (error) {
       console.error("Error", error);
       addToast({
