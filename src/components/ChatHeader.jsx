@@ -17,7 +17,7 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
         name={selectedChat.chatName}
         description={`@${selectedChat.username}`}
         avatarProps={{
-          src: selectedChat.chatProfile? getFileURL(selectedChat.chatProfile): "",
+          src: selectedChat.profile? getFileURL(selectedChat.profile): "",
           fallback: selectedChat?.chatName[0]?.toUpperCase(),
         }}
         classNames={{

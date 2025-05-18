@@ -74,23 +74,23 @@ const useChatSocket = ({
         if (!prev?.chats) return prev;
 
         const updatedChats = prev.chats.map((chat) => {
-          const updatedParticipants = chat.participants.map((participant) =>
-            participant._id === userId
+          const updatedMembers = chat.members.map((member) =>
+            member._id === userId
               ? {
-                  ...participant,
+                  ...member,
                   isOnline,
                   lastSeen: isOnline ? null : new Date().toISOString(),
                 }
-              : participant
+              : member
           );
 
-          const isUserInChat = chat.participants.some((p) => p._id === userId);
+          const isUserInChat = chat.members.some((p) => p._id === userId);
           const newChatStatus =
             !chat.isGroup && isUserInChat ? isOnline : chat.isOnline;
 
           return {
             ...chat,
-            participants: updatedParticipants,
+            members: updatedMembers,
             isOnline: newChatStatus,
           };
         });

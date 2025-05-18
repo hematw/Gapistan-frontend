@@ -14,7 +14,7 @@ function ChatActions({ selectedChat }) {
       <CardHeader>
         <div>
           <div className="flex items-center gap-4 mb-4">
-            <Avatar size="lg" src={getFileURL(selectedChat?.chatProfile)} />
+            <Avatar size="lg" src={getFileURL(selectedChat?.profile)} />
             <div>
               <h3 className="font-medium">{selectedChat?.chatName}</h3>
               <p className="flex items-center gap-2 text-default-400 mt-2">
