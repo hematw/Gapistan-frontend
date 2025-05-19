@@ -12,7 +12,7 @@ function ChatActions({ selectedChat }) {
   return (
     <Card className="bg-white dark:bg-dark shadow-lg">
       <CardHeader>
-        <div>
+        <div className="w-full">
           <div className="flex items-center gap-4 mb-4">
             <Avatar size="lg" src={getFileURL(selectedChat?.profile)} />
             <div>

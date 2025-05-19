@@ -56,8 +56,8 @@ function SelectedFilesDrawer({files, onRemove}) {
 
                 {/* 📄 PDF */}
                 {fileType === "application/pdf" && (
-                  <div className="flex flex-col items-center justify-center w-18 h-18 rounded-lg bg-gray-100 text-red-600">
-                    <span className="text-xs font-bold">PDF</span>
+                  <div className="flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-gray-100 text-red-600">
+                    <span className="text-lg font-bold">PDF</span>
                   </div>
                 )}
 
