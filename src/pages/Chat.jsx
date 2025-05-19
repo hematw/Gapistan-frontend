@@ -185,8 +185,8 @@ function Chat() {
     setFiles([]);
   };
 
-  // Reuse your update cache logic
   const handleSocketResponse = ({ message, error, data }) => {
+    console.log(message);
     if (!error) {
       queryClient.setQueryData(
         ["chats", selectedChat._id, "timeline"],
@@ -290,6 +290,9 @@ function Chat() {
     setTypingUser,
   });
 
+  if ((chatsErr, chatTimelineErr)) {
+    return <p>{chatTimeline.message || chatsErr.message}</p>;
+  }
   if (chatsLoading) {
     return <p className="text-2xl">Loading...</p>;
   }
@@ -367,11 +370,13 @@ function Chat() {
               )}
             </div>
 
-            <RightSidebar
-              selectedChat={selectedChat}
-              members={members}
-              files={chatFiles}
-            />
+            {!!selectedChat && (
+              <RightSidebar
+                selectedChat={selectedChat}
+                members={members}
+                files={chatFiles}
+              />
+            )}
           </div>
         </div>
       </div>
