@@ -1,16 +1,35 @@
-    import React from "react";
-import FileSection from "./FileSection";
-import MemberList from "./MemberList";
-import ChatActions from "./ChatActions";
+import React, { lazy } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axiosIns from "../utils/axios";
+
+const ChatActions = lazy(() => import("./ChatActions"));
+const MemberList = lazy(() => import("./MemberList"));
+const FileSection = lazy(() => import("./FileSection"));
 
 function RightSidebar({ members, files, selectedChat }) {
+  console.log(files)
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["chats", selectedChat?._id, "files"],
+    queryFn: async () => {
+      const { data } = await axiosIns.get(`/chats/${selectedChat?._id}/files`);
+      return data;
+    },
+    enabled: !!selectedChat?._id,
+  });
+
+  if (error) {
+    console.log(error);
+  }
+
   return (
     <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto hidden lg:block max-h-full">
       <ChatActions selectedChat={selectedChat} />
 
-      <MemberList members={members} />
+      {selectedChat.isGroup && (
+        <MemberList members={members} selectedChat={selectedChat} />
+      )}
 
-      <FileSection files={files} />
+      {isLoading ? "Loading files" : <FileSection data={data} />}
     </div>
   );
 }
