@@ -3,10 +3,8 @@ import { Button } from "@heroui/button";
 import {
   CircleFadingPlus,
   Image,
-  Pen,
   Plus,
   Upload,
-  User,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -34,7 +32,7 @@ import getFileURL from "../utils/setFileURL";
 import { addToast } from "@heroui/toast";
 
 function Sidebar() {
-  const { isOpen, onClose, onOpen, onOpenChange } = useDisclosure();
+  const { isOpen, onClose, onOpen } = useDisclosure();
 
   const [profilePreview, setProfilePreview] = useState();
   const fileInputRef = useRef();
@@ -57,6 +55,7 @@ function Sidebar() {
 
         const updatedChats = [...prev.chats];
         updatedChats.unshift(data);
+        onClose();
         return { ...prev, chats: updatedChats };
       });
     },
@@ -83,11 +82,6 @@ function Sidebar() {
     if (file) {
       setProfilePreview(URL.createObjectURL(file));
     }
-  };
-
-  const submitHandler = async (formData) => {
-    mutate(formData);
-    onClose();
   };
 
   return (
@@ -164,7 +158,7 @@ function Sidebar() {
           <ModalContent className="rounded-2xl shadow-2xl">
             {(onClose) => (
               <>
-                <form className="space-y-6" action={submitHandler}>
+                <form className="space-y-6" action={mutate}>
                   <ModalBody className="p-6">
                     <div className="flex flex-col items-center gap-4">
                       <div className="relative">
