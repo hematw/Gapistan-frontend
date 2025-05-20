@@ -36,8 +36,8 @@ function MemberList({ members, selectedChat }) {
     enabled: !!selectedChat?._id,
   });
 
-  const createGroup = async (formData) => {
-    const { data } = await axiosIns.post("/chats/group", formData, {
+  const addToGroup = async (formData) => {
+    const { data } = await axiosIns.post(`/chats/${selectedChat._id}/members`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -46,7 +46,7 @@ function MemberList({ members, selectedChat }) {
   };
 
   const { mutate, isLoading: mutationLoading } = useMutation({
-    mutationFn: createGroup,
+    mutationFn: addToGroup,
     onSuccess: (data) => {
       queryClient.setQueryData(
         ["chats", selectedChat?._id, "members"],
