@@ -36,11 +36,9 @@ function MemberList({ members, selectedChat }) {
     enabled: !!selectedChat?._id,
   });
 
-  const addToGroup = async (formData) => {
-    const { data } = await axiosIns.post(`/chats/${selectedChat._id}/members`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+  const addToGroup = async () => {
+    const { data } = await axiosIns.post(`/chats/${selectedChat._id}/members`, {
+      newMembers: selectedUserIds,
     });
     return data;
   };
@@ -48,16 +46,8 @@ function MemberList({ members, selectedChat }) {
   const { mutate, isLoading: mutationLoading } = useMutation({
     mutationFn: addToGroup,
     onSuccess: (data) => {
-      queryClient.setQueryData(
-        ["chats", selectedChat?._id, "members"],
-        (prev) => {
-          if (!prev || !Array.isArray(prev.chats)) return prev;
-
-          const updatedChats = [...prev.chats];
-          updatedChats.unshift(data);
-          return { ...prev, chats: updatedChats };
-        }
-      );
+      queryClient.invalidateQueries(["chats", selectedChat?._id, "members"]);
+      queryClient.invalidateQueries(["chats", selectedChat?._id, "timeline"]);
     },
     onError: (error) => {
       console.log(error);
@@ -209,7 +199,7 @@ function MemberList({ members, selectedChat }) {
                   ? member.firstName + " " + member.lastName
                   : member.username
               }
-              description={data.groupAdmin.includes(member._id) && "Admin"}
+              description={data.groupAdmins.includes(member._id) && "Admin"}
               classNames={{
                 base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
               }}

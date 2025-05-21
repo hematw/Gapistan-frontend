@@ -1,5 +1,6 @@
 import axiosIns from "@/utils/axios";
 import { addToast } from "@heroui/toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { isAxiosError } from "axios";
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +14,7 @@ const AuthContext = createContext({
 });
 
 export default function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(() => {
     const userData = localStorage.getItem("user");
     if (userData) {
@@ -26,6 +28,7 @@ export default function AuthProvider({ children }) {
   const navigate = useNavigate();
 
   async function logout() {
+    queryClient.clear();
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     setUser(null);
@@ -74,7 +77,9 @@ export default function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ signIn, logout, signUp, user, isLoggedIn, setUser }}>
+    <AuthContext.Provider
+      value={{ signIn, logout, signUp, user, isLoggedIn, setUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
