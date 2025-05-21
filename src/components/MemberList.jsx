@@ -19,6 +19,7 @@ import {
 import { addToast } from "@heroui/toast";
 import { Avatar } from "@heroui/avatar";
 import { Input } from "@heroui/input";
+import MemberOptions from "./MemberOptions";
 
 function MemberList({ members, selectedChat }) {
   const { user } = useAuth();
@@ -186,24 +187,27 @@ function MemberList({ members, selectedChat }) {
 
         <CardBody>
           {data?.members.map((member, index) => (
-            <User
-              key={index}
-              className="justify-stretch py-1"
-              avatarProps={{
-                src: getFileURL(member.profile),
-              }}
-              name={
-                user._id === member._id
-                  ? "You"
-                  : member.firstName
-                  ? member.firstName + " " + member.lastName
-                  : member.username
-              }
-              description={data.groupAdmins.includes(member._id) && "Admin"}
-              classNames={{
-                base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
-              }}
-            />
+            <div className="flex justify-between items-center">
+              <User
+                key={index}
+                className="justify-stretch py-1"
+                avatarProps={{
+                  src: getFileURL(member.profile),
+                }}
+                name={
+                  user._id === member._id
+                    ? "You"
+                    : member.firstName
+                    ? member.firstName + " " + member.lastName
+                    : member.username
+                }
+                description={data.groupAdmins.includes(member._id) && "Admin"}
+                classNames={{
+                  base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
+                }}
+              />
+              {user._id !== member._id && <MemberOptions userId={user._id} />}
+            </div>
           ))}
         </CardBody>
       </Card>
