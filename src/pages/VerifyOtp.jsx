@@ -5,8 +5,10 @@ import axiosIns from "@/utils/axios";
 import { addToast } from "@heroui/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { InputOtp } from "@heroui/input-otp";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function VerifyOtp() {
+  const {setUser} = useAuth();
   const [otp, setOtp] = useState("");
   const navigate = useNavigate();
   const [pendingSignUp, setPendingSignUp] = useState(() => {
@@ -31,6 +33,8 @@ export default function VerifyOtp() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.removeItem("pendingSignUp");
+
+      setUser(data.user);
 
       addToast({ title: "Signup Successful", color: "success" });
       navigate("/chat");
