@@ -23,20 +23,6 @@ import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
 
-const members = [
-  { id: 1, name: "Richard Wilson", status: "online" },
-  { id: 2, name: "Aamn", status: "offline" },
-  { id: 3, name: "You", status: "online" },
-  { id: 4, name: "Jaden Parker", status: "online" },
-  { id: 5, name: "Conner Garcia", status: "away" },
-  { id: 6, name: "Lawrence Patterson", status: "offline" },
-];
-
-const chatFiles = [
-  { type: "photos", count: 115 },
-  { type: "files", count: 200 },
-  { type: "shared links", count: 47 },
-];
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -373,8 +359,8 @@ function Chat() {
             {!!selectedChat && (
               <RightSidebar
                 selectedChat={selectedChat}
-                members={members}
-                files={chatFiles}
+                // members={members}
+                // files={chatFiles}
               />
             )}
           </div>
