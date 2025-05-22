@@ -46,7 +46,7 @@ function MemberList({ selectedChat }) {
 
   const { mutate, isLoading: mutationLoading } = useMutation({
     mutationFn: addToGroup,
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries(["chats", selectedChat?._id, "members"]);
       queryClient.invalidateQueries(["chats", selectedChat?._id, "timeline"]);
     },
@@ -161,7 +161,7 @@ function MemberList({ selectedChat }) {
                 <Button color="danger" onPress={onClose}>
                   Cancel
                 </Button>
-                <Button color="success" type="submit" isLoading={isLoading}>
+                <Button color="success" type="submit" isLoading={mutationLoading}>
                   Add
                 </Button>
               </ModalFooter>
@@ -206,7 +206,7 @@ function MemberList({ selectedChat }) {
                   base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
                 }}
               />
-              {user._id !== member._id && <MemberOptions userId={user._id} />}
+              {user._id !== member._id && <MemberOptions memberToRemove={member} chatId={selectedChat._id} />}
             </div>
           ))}
         </CardBody>
