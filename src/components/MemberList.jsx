@@ -21,7 +21,7 @@ import { Avatar } from "@heroui/avatar";
 import { Input } from "@heroui/input";
 import MemberOptions from "./MemberOptions";
 
-function MemberList({ members, selectedChat }) {
+function MemberList({ selectedChat }) {
   const { user } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
