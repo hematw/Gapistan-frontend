@@ -48,13 +48,13 @@ export default function AuthProvider({ children }) {
       });
       navigate("/chat", { replace: true });
     } catch (error) {
+      addToast({
+        title: "Login Failed",
+        description: error?.response?.data.message || "Invalid credentials. Please try again.",
+        color: "danger",
+      });
       if (isAxiosError(error) && error?.status == 401) {
         console.error("Unauthorized");
-        addToast({
-          title: "Login Failed",
-          description: "Invalid credentials. Please try again.",
-          color: "danger",
-        });
       }
       console.error(error);
     }

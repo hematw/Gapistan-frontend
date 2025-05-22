@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { SocketContext } from "../contexts/SocketContext";
 
@@ -6,6 +6,7 @@ let socketInstance = null;
 
 function SocketProvider({ children }) {
   const [socket, setSocket] = useState();
+  const disconnectedByUnmount = useRef(false);
 
   const VITE_SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
@@ -20,7 +21,13 @@ function SocketProvider({ children }) {
       console.log("closed ", socketInstance?.connected);
     });
 
-    socketInstance.on("disconnect", () => console.log("socket disconnected"));
+    socketInstance.on("disconnect", () => {
+      console.log("socket disconnected");
+      if (!disconnectedByUnmount.current) {
+        socketInstance = io(VITE_SOCKET_URL || "http://localhost:3000/");
+        setSocket(socketInstance);
+      }
+    });
 
     socketInstance.on("connect_error", (err) => {
       console.error("Socket connection error:", err);
@@ -31,6 +38,7 @@ function SocketProvider({ children }) {
       socketInstance.off("connect_error");
       console.log("closed ", socketInstance?.connected);
       socketInstance = null;
+      disconnectedByUnmount.current = true;
     };
   }, []);
 
