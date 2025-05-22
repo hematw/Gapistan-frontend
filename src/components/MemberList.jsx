@@ -201,12 +201,12 @@ function MemberList({ selectedChat }) {
                     ? member.firstName + " " + member.lastName
                     : member.username
                 }
-                description={data.groupAdmins.includes(member._id) && "Admin"}
+                description={data.groupAdmins.includes(user._id) && "Admin"}
                 classNames={{
                   base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
                 }}
               />
-              {user._id !== member._id && <MemberOptions memberToRemove={member} chatId={selectedChat._id} />}
+              {(user._id !== member._id)&& data.groupAdmins.includes(member._id) && <MemberOptions memberToRemove={member} chatId={selectedChat._id} />}
             </div>
           ))}
         </CardBody>
