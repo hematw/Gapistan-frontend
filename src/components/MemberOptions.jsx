@@ -17,20 +17,38 @@ import {
   useDisclosure,
 } from "@heroui/modal";
 
-function MemberOptions({ memberToRemove, chatId }) {
+function MemberOptions({ member, chatId }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
 
   const { mutate } = useMutation({
     mutationFn: async () => {
       const { data } = await axiosIns.delete(
-        `/chats/${chatId}/members/${memberToRemove._id}`
+        `/chats/${chatId}/members/${member._id}`
       );
       return data;
     },
     onSuccess: (data) => {
       console.log("User removed successfully", data);
       queryClient.setQueryData(["chats", chatId, "members"], data);
+      // queryClient.invalidateQueries(["chats", chatId, "timeline"]);
+    },
+    onError: (error) => {
+      console.error("Error:", error);
+    },
+  });
+
+  const makeAdmin = useMutation({
+    mutationFn: async () => {
+      const { data } = await axiosIns.put(
+        `/chats/${chatId}/make-admin/${member._id}`
+      );
+      return data;
+    },
+    onSuccess: (data) => {
+      console.log("Made admin successfully", data);
+      // queryClient.setQueryData(["chats", chatId, "members"], data);
+      queryClient.invalidateQueries(["chats", chatId, "members"]);
       // queryClient.invalidateQueries(["chats", chatId, "timeline"]);
     },
     onError: (error) => {
@@ -50,7 +68,7 @@ function MemberOptions({ memberToRemove, chatId }) {
           />
         </DropdownTrigger>
         <DropdownMenu>
-          <DropdownItem className="p-2" startContent={<Crown />}>
+          <DropdownItem className="p-2" startContent={<Crown />} onPress={makeAdmin.mutate}>
             Make Admin
           </DropdownItem>
           <DropdownItem
@@ -67,9 +85,9 @@ function MemberOptions({ memberToRemove, chatId }) {
           <ModalHeader>
             <p className="py-4">
               {`Remove ${
-                memberToRemove.firstName
-                  ? memberToRemove.firstName + " " + memberToRemove.lastName
-                  : memberToRemove.username
+                member.firstName
+                  ? member.firstName + " " + member.lastName
+                  : member.username
               } from this chat?`}
             </p>
           </ModalHeader>
