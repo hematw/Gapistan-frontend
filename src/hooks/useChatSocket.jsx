@@ -141,8 +141,6 @@ const useChatSocket = ({
         if (!prev || !Array.isArray(prev.chats)) {
           return {
             chats: [chat],
-            total: 1,
-            page: 1,
           };
         }
 

@@ -194,7 +194,7 @@ function MemberList({ selectedChat }) {
             <div className="flex justify-between items-center">
               <User
                 key={index}
-                className="justify-stretch py-1"
+                className="justify-stretch py-1 flex-1"
                 avatarProps={{
                   src: getFileURL(member.profile),
                 }}
@@ -207,13 +207,14 @@ function MemberList({ selectedChat }) {
                 }
                 description={data.groupAdmins.includes(member._id) && "Admin"}
                 classNames={{
-                  base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200",
+                  base: "hover:bg-gray-100 dark:hover:bg-dark-2 transition-all duration-200 flex",
                 }}
               />
               {user._id !== member._id &&
                 data.groupAdmins.includes(user._id) && (
                   <MemberOptions
                     member={member}
+                    isAdmin={data.groupAdmins.includes(user._id)}
                     chatId={selectedChat._id}
                   />
                 )}

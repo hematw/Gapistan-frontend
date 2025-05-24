@@ -16,8 +16,9 @@ import {
   ModalHeader,
   useDisclosure,
 } from "@heroui/modal";
+import { addToast } from "@heroui/toast";
 
-function MemberOptions({ member, chatId }) {
+function MemberOptions({ member, chatId, isAdmin }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const queryClient = useQueryClient();
 
@@ -30,7 +31,8 @@ function MemberOptions({ member, chatId }) {
     },
     onSuccess: (data) => {
       console.log("User removed successfully", data);
-      queryClient.setQueryData(["chats", chatId, "members"], data);
+      // queryClient.setQueryData(["chats", chatId, "members"], data);
+      queryClient.invalidateQueries(["chats", chatId, "members"]);
       // queryClient.invalidateQueries(["chats", chatId, "timeline"]);
     },
     onError: (error) => {
@@ -38,12 +40,19 @@ function MemberOptions({ member, chatId }) {
     },
   });
 
-  const makeAdmin = useMutation({
+  const adminMutation = useMutation({
     mutationFn: async () => {
-      const { data } = await axiosIns.put(
-        `/chats/${chatId}/make-admin/${member._id}`
-      );
-      return data;
+      if (isAdmin) {
+        const { data } = await axiosIns.delete(
+          `/chats/${chatId}/admins/${member._id}`
+        );
+        return data;
+      } else {
+        const { data } = await axiosIns.put(
+          `/chats/${chatId}/admins/${member._id}`
+        );
+        return data;
+      }
     },
     onSuccess: (data) => {
       console.log("Made admin successfully", data);
@@ -53,6 +62,11 @@ function MemberOptions({ member, chatId }) {
     },
     onError: (error) => {
       console.error("Error:", error);
+      addToast({
+        title: "Failed",
+        description: error?.response?.data.message,
+        color: "danger",
+      });
     },
   });
 
@@ -68,8 +82,12 @@ function MemberOptions({ member, chatId }) {
           />
         </DropdownTrigger>
         <DropdownMenu>
-          <DropdownItem className="p-2" startContent={<Crown />} onPress={makeAdmin.mutate}>
-            Make Admin
+          <DropdownItem
+            className="p-2"
+            startContent={<Crown />}
+            onPress={adminMutation.mutate}
+          >
+            {isAdmin ? "Dismiss as Admin" : "Make Admin"}
           </DropdownItem>
           <DropdownItem
             className="p-2"
