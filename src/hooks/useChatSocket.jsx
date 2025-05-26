@@ -8,7 +8,7 @@ const useChatSocket = ({
   queryClient,
   playSound,
   scrollToBottom,
-  setTypingUser,
+  setTypingMessage,
 }) => {
   useEffect(() => {
     if (!socket) return;
@@ -19,53 +19,59 @@ const useChatSocket = ({
     });
 
     const handleMessageReceived = (data) => {
-      const messageId = data?._id;
-      // const isSameChat = selectedChat?._id === data.chat;
+  const messageId = data?._id;
 
-      socket.emit("message-delivered", { messageId });
+  socket.emit("message-delivered", { messageId });
 
-      // if (isSameChat) {
-      queryClient.setQueryData(["chats", data.chat, "timeline"], (oldData) => {
-        if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+  // Update chat timeline
+  queryClient.setQueryData(["chats", data.chat, "timeline"], (oldData) => {
+    if (!oldData || !Array.isArray(oldData.messages)) return oldData;
 
-        const messages = [...oldData.messages];
-        const lastGroup = messages[messages.length - 1];
-        const isTodayGroup =
-          lastGroup?.label?.toLowerCase() === "today" &&
-          Array.isArray(lastGroup.items);
+    const messages = [...oldData.messages];
+    const lastGroup = messages[messages.length - 1];
+    const isTodayGroup =
+      lastGroup?.label?.toLowerCase() === "today" &&
+      Array.isArray(lastGroup.items);
 
-        if (isTodayGroup) {
-          const updatedGroup = {
-            ...lastGroup,
-            items: [...lastGroup.items, { ...data, contentType: "message" }],
-          };
-          messages[messages.length - 1] = updatedGroup;
-        } else {
-          messages.push({
-            label: "Today",
-            items: [{ ...data, contentType: "message" }],
-          });
-        }
-
-        return { ...oldData, messages };
+    if (isTodayGroup) {
+      const updatedGroup = {
+        ...lastGroup,
+        items: [...lastGroup.items, { ...data, contentType: "message" }],
+      };
+      messages[messages.length - 1] = updatedGroup;
+    } else {
+      messages.push({
+        label: "Today",
+        items: [{ ...data, contentType: "message" }],
       });
-      // }
-      //  else {
-      //   queryClient.invalidateQueries(["chats", data.chat, "timeline"]);
-      // }
+    }
 
-      queryClient.setQueryData(["chats"], (prev) => {
-        if (!prev || !Array.isArray(prev.chats)) return prev;
+    return { ...oldData, messages };
+  });
 
-        const updatedChats = prev.chats.map((chat) =>
-          chat._id === data.chat ? { ...chat, lastMessage: data } : chat
-        );
+  // Update chats list and move this chat to the top
+  queryClient.setQueryData(["chats"], (prev) => {
+    if (!prev || !Array.isArray(prev.chats)) return prev;
 
-        return { ...prev, chats: updatedChats };
-      });
+    const chatIndex = prev.chats.findIndex((chat) => chat._id === data.chat);
+    if (chatIndex === -1) return prev;
 
-      scrollToBottom?.();
+    const updatedChat = {
+      ...prev.chats[chatIndex],
+      lastMessage: data,
     };
+
+    const newChats = [
+      updatedChat,
+      ...prev.chats.filter((chat) => chat._id !== data.chat),
+    ];
+
+    return { ...prev, chats: newChats };
+  });
+
+  scrollToBottom?.();
+};
+console.log
 
     const handleStatusUpdate = ({ userId, isOnline }) => {
       console.log("🟢 Status update for user:", userId);
@@ -99,9 +105,10 @@ const useChatSocket = ({
       });
     };
 
-    const handleTyping = ({ chatId, userId, isTyping }) => {
+    const handleTyping = ({ chatId, userId, isTyping, content }) => {
+      console.log("🖋️ Typing event:", chatId, userId, isTyping, content);
       if (chatId === selectedChat?._id && userId !== user._id) {
-        setTypingUser(isTyping ? userId : null);
+        setTypingMessage(isTyping ? content : "Typing...");
       }
     };
 
@@ -200,7 +207,7 @@ const useChatSocket = ({
     socket,
     user._id,
     scrollToBottom,
-    setTypingUser,
+    setTypingMessage,
   ]);
 };
 

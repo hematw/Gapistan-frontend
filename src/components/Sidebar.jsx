@@ -26,7 +26,7 @@ import { Input } from "@heroui/input";
 import { useRef, useState } from "react";
 import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import getFileURL from "../utils/setFileURL";
 import { addToast } from "@heroui/toast";
@@ -36,7 +36,6 @@ function Sidebar() {
 
   const [profilePreview, setProfilePreview] = useState();
   const fileInputRef = useRef();
-  const queryClient = useQueryClient();
 
   const createGroup = async (formData) => {
     const { data } = await axiosIns.post("/chats/group", formData, {
@@ -49,16 +48,7 @@ function Sidebar() {
 
   const { mutate, isLoading } = useMutation({
     mutationFn: createGroup,
-    onSuccess: (data) => {
-      queryClient.setQueryData(["chats"], (prev) => {
-        if (!prev || !Array.isArray(prev.chats)) return prev;
-
-        const updatedChats = [...prev.chats];
-        updatedChats.unshift(data);
-        onClose();
-        return { ...prev, chats: updatedChats };
-      });
-    },
+    onSuccess: () => onClose(),
     onError: (error) => {
       console.log(error);
       addToast({

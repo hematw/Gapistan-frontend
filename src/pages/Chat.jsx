@@ -23,7 +23,6 @@ import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
 
-
 function Chat() {
   const { socket, playSound } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
@@ -32,7 +31,7 @@ function Chat() {
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [files, setFiles] = useState([]);
-  const [typingUser, setTypingUser] = useState(null);
+  const [typingMessage, setTypingMessage] = useState(null);
 
   const {
     data: chatsData,
@@ -173,7 +172,9 @@ function Chat() {
 
   const handleSocketResponse = ({ message, error, data }) => {
     console.log(message);
+
     if (!error) {
+      // Update chat timeline
       queryClient.setQueryData(
         ["chats", selectedChat._id, "timeline"],
         (oldData) => {
@@ -201,15 +202,26 @@ function Chat() {
         }
       );
 
+      // Update chats list and move this chat to the top
       queryClient.setQueryData(["chats"], (prev) => {
         if (!prev || !Array.isArray(prev.chats)) return prev;
 
-        return {
-          ...prev,
-          chats: prev.chats.map((chat) =>
-            chat._id === data.chat ? { ...chat, lastMessage: data } : chat
-          ),
+        const chatIndex = prev.chats.findIndex(
+          (chat) => chat._id === data.chat
+        );
+        if (chatIndex === -1) return prev;
+
+        const updatedChat = {
+          ...prev.chats[chatIndex],
+          lastMessage: data,
         };
+
+        const newChats = [
+          updatedChat,
+          ...prev.chats.filter((chat) => chat._id !== data.chat),
+        ];
+
+        return { ...prev, chats: newChats };
       });
 
       scrollToBottom();
@@ -252,6 +264,7 @@ function Chat() {
         userId: user._id,
         isTyping,
         timestamp: new Date().toISOString(),
+        content: `${user.firstName || user.username} is typing...}`,
       });
     }
   };
@@ -273,7 +286,7 @@ function Chat() {
     queryClient,
     playSound,
     scrollToBottom,
-    setTypingUser,
+    setTypingMessage,
   });
 
   if ((chatsErr, chatTimelineErr)) {
@@ -336,9 +349,9 @@ function Chat() {
                       fileRef={fileRef}
                     />
 
-                    {typingUser && (
+                    {typingMessage && (
                       <div className="text-sm text-gray-500 italic mb-2">
-                        {selectedChat.chatName} is typing...
+                        {typingMessage.chatName}
                       </div>
                     )}
 

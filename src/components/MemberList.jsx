@@ -49,6 +49,7 @@ function MemberList({ selectedChat }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["chats", selectedChat?._id, "members"]);
       queryClient.invalidateQueries(["chats", selectedChat?._id, "timeline"]);
+      onClose()
     },
     onError: (error) => {
       console.log(error);
@@ -214,7 +215,7 @@ function MemberList({ selectedChat }) {
                 data.groupAdmins.includes(user._id) && (
                   <MemberOptions
                     member={member}
-                    isAdmin={data.groupAdmins.includes(user._id)}
+                    isAdmin={data.groupAdmins.includes(member._id)}
                     chatId={selectedChat._id}
                   />
                 )}

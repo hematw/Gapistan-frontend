@@ -58,7 +58,7 @@ function MemberOptions({ member, chatId, isAdmin }) {
       console.log("Made admin successfully", data);
       // queryClient.setQueryData(["chats", chatId, "members"], data);
       queryClient.invalidateQueries(["chats", chatId, "members"]);
-      // queryClient.invalidateQueries(["chats", chatId, "timeline"]);
+      queryClient.invalidateQueries(["chats", chatId, "timeline"]);
     },
     onError: (error) => {
       console.error("Error:", error);

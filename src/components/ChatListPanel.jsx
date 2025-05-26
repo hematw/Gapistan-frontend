@@ -88,7 +88,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                             isYou={chat.isYou}
                             unread={chat.unread}
                             lastMessage={chat.lastMessage}
-                            profile={chat.profile}
+                            profile={getFileURL(chat.profile)}
                             onClick={() => setSelectedChat(chat)}
                           />
                         </ListboxItem>
@@ -118,7 +118,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                                 ? `${user.firstName} ${user.lastName}`
                                 : user.username,
                               status: user.status,
-                              profileImage: user.profileImage,
+                              profile: user.profile,
                               username: user.username,
                             };
                             setSelectedUser(user);
