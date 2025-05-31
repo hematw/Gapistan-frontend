@@ -192,7 +192,7 @@ function MemberList({ selectedChat }) {
 
         <CardBody>
           {data?.members.map((member, index) => (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center" key={member._id}>
               <User
                 key={index}
                 className="justify-stretch py-1 flex-1"
