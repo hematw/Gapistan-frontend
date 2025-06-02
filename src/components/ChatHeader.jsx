@@ -7,7 +7,7 @@ import {
   Pen,
   SquarePen,
 } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import getFileURL from "../utils/setFileURL";
 import { useDisclosure } from "@heroui/use-disclosure";
 import {
@@ -17,7 +17,7 @@ import {
   DropdownTrigger,
 } from "@heroui/dropdown";
 import CustomModal from "./CustomModal";
-import { Input, Textarea } from "@heroui/input";
+import { Input } from "@heroui/input";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
@@ -31,43 +31,65 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
   } = useDisclosure();
 
   const queryClient = useQueryClient();
+  const fileInputRef = useRef();
 
   const [profilePreview, setProfilePreview] = useState(() => {
     return getFileURL(selectedChat.profile) || null;
   });
 
-  const fileInputRef = useRef();
-
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     setValue,
+    reset,
   } = useForm({
     defaultValues: {
-      name: selectedChat.chatName || "",
-      bio: selectedChat.bio || "",
+      chatName: selectedChat.chatName || "",
       profile: getFileURL(selectedChat.profile) || null,
     },
   });
 
-  const mutation = useMutation({
+  useEffect(() => {
+    reset({
+      chatName: selectedChat.chatName || "",
+      profile: getFileURL(selectedChat.profile) || null,
+    });
+  }, [selectedChat, reset]);
+
+  const editMutation = useMutation({
     mutationFn: async (data) => {
       const response = await axiosIns.put(`/chats/${selectedChat._id}`, data);
-      return response.json();
+      return response.data;
     },
     onSuccess: (data) => {
       onEditClose();
-      queryClient.setQueryData(["chats"], (oldChats) => {
-        return oldChats.map((chat) =>
+      queryClient.setQueryData(["chats"], (oldChats) =>
+        oldChats.map((chat) =>
           chat._id === selectedChat._id ? { ...chat, ...data } : chat
-        );
-      });
+        )
+      );
     },
     onError: (error) => {
       console.error("Error updating chat:", error);
     },
-  })
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: async ({ chatId }) => {
+      const { data } = await axiosIns.put(`/chats/${chatId}/leave`);
+      return data;
+    },
+    onSuccess: () => {
+      onEditClose();
+      queryClient.setQueryData(["chats"], (oldChats) => ({
+        chats: oldChats.chats?.filter((chat) => chat._id !== selectedChat._id),
+      }));
+    },
+    onError: (error) => {
+      console.error("Error leaving chat:", error);
+    },
+  });
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -77,7 +99,15 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
     }
   };
 
-  console.log("Selected Chat:", selectedChat);
+  const handleEditSubmit = handleSubmit((formData) => {
+    const formPayload = new FormData();
+    formPayload.append("chatName", formData.chatName);
+    if (formData.profile?.[0]) {
+      formPayload.append("profile", formData.profile[0]);
+    }
+
+    editMutation.mutate(formPayload);
+  });
 
   return (
     <div className="flex items-center justify-between p-2 border-b border-default-200">
@@ -100,7 +130,8 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
           }}
         />
       </div>
-      {selectedChat.isGroup &&
+
+      {selectedChat.isGroup && (
         <>
           <Dropdown aria-label="Dropdown for chat options">
             <DropdownTrigger>
@@ -128,23 +159,28 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
               </DropdownItem>
             </DropdownMenu>
           </Dropdown>
+
+          {/* Leave Group Modal */}
           <CustomModal
             isOpen={isOpen}
             onClose={onClose}
             message={`Are you sure to leave "${selectedChat.chatName}"?`}
             confirmMessage="Leave Group"
             onConfirm={() => {
-              console.log("Leaving group:", selectedChat._id);
+              leaveMutation.mutate({ chatId: selectedChat._id });
               onClose();
             }}
           />
+
+          {/* Edit Group Modal */}
           <CustomModal
             isOpen={isEditOpen}
             onClose={onEditClose}
             confirmMessage={"Save Changes"}
+            onConfirm={handleEditSubmit}
           >
             <form
-              onSubmit={handleSubmit}
+              onSubmit={handleEditSubmit}
               className="space-y-4"
               encType="multipart/form-data"
             >
@@ -174,25 +210,18 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
                 />
               </div>
               <Input
-                {...register("name")}
+                {...register("chatName", {
+                  required: "Group name is required",
+                })}
                 label="Group Name"
                 className="w-full"
-                errorMessage={errors?.email?.message}
-                isInvalid={!!errors?.email}
-              />
-
-              <Textarea
-                {...register("bio")}
-                label="Group Bio"
-                className="w-full"
-                rows={3}
-                errorMessage={errors?.bio?.message}
-                isInvalid={!!errors?.bio}
+                errorMessage={errors?.chatName?.message}
+                isInvalid={!!errors?.chatName}
               />
             </form>
           </CustomModal>
         </>
-      }
+      )}
     </div>
   );
 }
