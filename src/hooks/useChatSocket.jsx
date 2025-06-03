@@ -167,61 +167,47 @@ const useChatSocket = ({
     };
 
     const handleGroupEvent = (data) => {
-      const eventId = data?._id;
-
-      // Optional: acknowledge event delivery
-      socket.emit("event-delivered", { eventId });
-
+      console.log("📦 Group event:", data);
       // Update chat timeline
-      queryClient.setQueryData(["chats", data.chat, "timeline"], (oldData) => {
-        if (!oldData || !Array.isArray(oldData.messages)) return oldData;
+      queryClient.setQueryData(
+        ["chats", data.chat._id, "timeline"],
+        (oldData) => {
+          if (!oldData || !Array.isArray(oldData.messages)) return oldData;
 
-        const messages = [...oldData.messages];
-        const lastGroup = messages[messages.length - 1];
+          const messages = [...oldData.messages];
+          const lastGroup = messages[messages.length - 1];
 
-        const isTodayGroup =
-          lastGroup?.label?.toLowerCase() === "today" &&
-          Array.isArray(lastGroup.items);
+          const isTodayGroup =
+            lastGroup?.label?.toLowerCase() === "today" &&
+            Array.isArray(lastGroup.items);
 
-        const eventItem = {
-          ...data,
-          contentType: "event", // distinguish from normal messages
-        };
+          if (isTodayGroup) {
+            const updatedGroup = {
+              ...lastGroup,
+              items: [...lastGroup.items, data.event],
+            };
+            messages[messages.length - 1] = updatedGroup;
+          } else {
+            messages.push({
+              label: "Today",
+              items: [data.event],
+            });
+          }
 
-        if (isTodayGroup) {
-          const updatedGroup = {
-            ...lastGroup,
-            items: [...lastGroup.items, eventItem],
-          };
-          messages[messages.length - 1] = updatedGroup;
-        } else {
-          messages.push({
-            label: "Today",
-            items: [eventItem],
-          });
+          return { ...oldData, messages };
         }
+      );
 
-        return { ...oldData, messages };
-      });
-
-      // Update chats list and move this chat to top (optional)
       queryClient.setQueryData(["chats"], (prev) => {
         if (!prev || !Array.isArray(prev.chats)) return prev;
 
-        const chatIndex = prev.chats.findIndex(
-          (chat) => chat._id === data.chat
-        );
-        if (chatIndex === -1) return prev;
-
-        const updatedChat = {
-          ...prev.chats[chatIndex],
-          lastMessage: data, // you might wanna exclude this if events shouldn't show as preview
-        };
-
-        const newChats = [
-          updatedChat,
-          ...prev.chats.filter((chat) => chat._id !== data.chat),
-        ];
+        const newChats = prev.chats.map((chat) => {
+          if (chat._id === data.chat._id) {
+            return data.chat;
+          } else {
+            return chat;
+          }
+        });
 
         return { ...prev, chats: newChats };
       });
@@ -257,7 +243,7 @@ const useChatSocket = ({
     socket.on("new-chat", handleNewChat);
     socket.on("group-event", handleGroupEvent);
     socket.onAny(handleAnyEvent);
-    
+
     return () => {
       socket.off("message-received", handleMessageReceived);
       socket.off("update-status", handleStatusUpdate);

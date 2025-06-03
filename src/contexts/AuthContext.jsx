@@ -5,6 +5,23 @@ import { isAxiosError } from "axios";
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
+import { storePrivateKey } from "@/services/keyManager";
+
+async function setupKeysAndSendToServer(userId) {
+  const { publicKey, privateKey } = await generateECDHKeyPair();
+
+  // Store private key in IndexedDB
+  await storePrivateKey(privateKey);
+
+  // Export public key and send to backend
+  const exportedPublicKey = await exportPublicKey(publicKey);
+  await axiosIns.post("/api/users/public-key", {
+    userId,
+    publicKey: exportedPublicKey,
+  });
+}
+
 const AuthContext = createContext({
   signIn: () => Promise.resolve(),
   signUp: () => Promise.resolve(),
@@ -41,6 +58,9 @@ export default function AuthProvider({ children }) {
       setUser(data.user);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+
+      await setupKeysAndSendToServer(data.user._id);
+
       addToast({
         title: "Success",
         description: "Login successful!",
@@ -50,7 +70,9 @@ export default function AuthProvider({ children }) {
     } catch (error) {
       addToast({
         title: "Login Failed",
-        description: error?.response?.data.message || "Invalid credentials. Please try again.",
+        description:
+          error?.response?.data.message ||
+          "Invalid credentials. Please try again.",
         color: "danger",
       });
       if (isAxiosError(error) && error?.status == 401) {

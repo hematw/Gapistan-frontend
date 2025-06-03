@@ -22,6 +22,14 @@ import ChatTimeline from "../components/ChatTimeline";
 import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
+import {
+  generateECDHKeyPair,
+  exportPublicKey,
+  importPublicKey,
+  deriveSharedAESKey,
+  encryptMessage,
+  decryptMessage,
+} from "../utils/crypto";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -61,6 +69,10 @@ function Chat() {
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
 
+  // E2EE: Store key pairs and public keys in state (or context for real app)
+  const [ecdhKeyPair, setEcdhKeyPair] = useState(null);
+  const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
+
   useSeenHandler({
     messagesEndRef: chatEndRef,
     socket,
@@ -72,15 +84,37 @@ function Chat() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+  // On mount, generate ECDH key pair if not present
+  useEffect(() => {
+    async function setupKeys() {
+      if (!ecdhKeyPair) {
+        const keyPair = await generateECDHKeyPair();
+        setEcdhKeyPair(keyPair);
+        // Optionally: send public key to server for sharing with other users
+      }
+    }
+    setupKeys();
+  }, []);
+
+  // Helper: get or fetch other user's public key for this chat
+  async function getOtherUserPublicKey(chatId, receiverId) {
+    if (chatPublicKeys[chatId]) {
+      return await importPublicKey(chatPublicKeys[chatId]);
+    }
+    // Fetch from server (implement endpoint to get user's public key)
+    const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+    setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
+    return await importPublicKey(data.publicKey);
+  }
+
+  // E2EE sendMessage
   const sendMessage = async (formdata) => {
     if (!socket) {
       console.log("Socket not initialized");
       return;
     }
-
     const text = formdata.get("text")?.trim();
     const file = formdata.get("files");
-
     // === Validate empty submission ===
     if (!text && (!file || file.size === 0)) {
       return addToast({
@@ -89,7 +123,23 @@ function Chat() {
         color: "danger",
       });
     }
-
+    let encryptedText = null;
+    // let encryptedFile = null;
+    let iv = null;
+    if (text && ecdhKeyPair && selectedUser) {
+      const otherPubKey = await getOtherUserPublicKey(
+        selectedChat._id,
+        selectedUser._id
+      );
+      const aesKey = await deriveSharedAESKey(
+        ecdhKeyPair.privateKey,
+        otherPubKey
+      );
+      const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
+      encryptedText = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+      iv = Array.from(textIv);
+    }
+    // For file: you can encrypt file similarly (not shown for brevity)
     // === File Validation ===
     const maxSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = [
@@ -288,6 +338,35 @@ function Chat() {
     scrollToBottom,
     setTypingMessage,
   });
+
+  // E2EE: Decrypt incoming messages
+  useEffect(() => {
+    async function decryptTimeline() {
+      if (!chatTimeline?.messages || !ecdhKeyPair) return;
+      for (const group of chatTimeline.messages) {
+        for (const msg of group.items) {
+          if (msg.text && msg.iv && msg.senderId !== user._id) {
+            const otherPubKey = await getOtherUserPublicKey(
+              selectedChat._id,
+              msg.senderId
+            );
+            const aesKey = await deriveSharedAESKey(
+              ecdhKeyPair.privateKey,
+              otherPubKey
+            );
+            const ciphertext = new Uint8Array(
+              atob(msg.text)
+                .split("")
+                .map((c) => c.charCodeAt(0))
+            );
+            const iv = new Uint8Array(msg.iv);
+            msg.text = await decryptMessage(aesKey, ciphertext, iv);
+          }
+        }
+      }
+    }
+    decryptTimeline();
+  }, [chatTimeline, ecdhKeyPair, selectedChat]);
 
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline.message || chatsErr.message}</p>;
