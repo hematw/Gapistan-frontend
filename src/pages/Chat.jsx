@@ -98,13 +98,22 @@ function Chat() {
 
   // Helper: get or fetch other user's public key for this chat
   async function getOtherUserPublicKey(chatId, receiverId) {
-    if (chatPublicKeys[chatId]) {
-      return await importPublicKey(chatPublicKeys[chatId]);
+    try {
+      if (chatPublicKeys[chatId]) {
+        return await importPublicKey(chatPublicKeys[chatId]);
+      }
+      // Fetch from server (implement endpoint to get user's public key)
+      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+      setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
+      return await importPublicKey(data.publicKey);
+    } catch (error) {
+      console.error("Failed to get other user's public key:", error);
+      addToast({
+        title: "Public Key Error",
+        description: "Could not retrieve the other user's public key.",
+        color: "danger",
+      });
     }
-    // Fetch from server (implement endpoint to get user's public key)
-    const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
-    setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
-    return await importPublicKey(data.publicKey);
   }
 
   // E2EE sendMessage
@@ -113,8 +122,10 @@ function Chat() {
       console.log("Socket not initialized");
       return;
     }
+
     const text = formdata.get("text")?.trim();
     const file = formdata.get("files");
+
     // === Validate empty submission ===
     if (!text && (!file || file.size === 0)) {
       return addToast({
@@ -123,23 +134,35 @@ function Chat() {
         color: "danger",
       });
     }
+
     let encryptedText = null;
-    // let encryptedFile = null;
     let iv = null;
+
     if (text && ecdhKeyPair && selectedUser) {
-      const otherPubKey = await getOtherUserPublicKey(
-        selectedChat._id,
-        selectedUser._id
-      );
-      const aesKey = await deriveSharedAESKey(
-        ecdhKeyPair.privateKey,
-        otherPubKey
-      );
-      const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
-      encryptedText = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
-      iv = Array.from(textIv);
+      try {
+        const otherPubKey = await getOtherUserPublicKey(
+          selectedChat._id,
+          selectedUser._id
+        );
+        const aesKey = await deriveSharedAESKey(
+          ecdhKeyPair.privateKey,
+          otherPubKey
+        );
+        const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
+        encryptedText = btoa(
+          String.fromCharCode(...new Uint8Array(ciphertext))
+        );
+        iv = Array.from(textIv); // To store IV with the message
+      } catch (error) {
+        console.error("Encryption failed:", error);
+        return addToast({
+          title: "Encryption Error",
+          description: "Could not encrypt message.",
+          color: "danger",
+        });
+      }
     }
-    // For file: you can encrypt file similarly (not shown for brevity)
+
     // === File Validation ===
     const maxSize = 5 * 1024 * 1024; // 5MB
     const allowedTypes = [
@@ -152,12 +175,12 @@ function Chat() {
       "application/pdf",
     ];
 
-    console.log(file.type);
     if (file && file.size > 0) {
       if (!allowedTypes.includes(file.type)) {
         return addToast({
           title: "Unsupported file type",
-          description: "Only MP3, WebM, PNG, PDF and JPEG files are allowed.",
+          description:
+            "Only MP3, WebM, PNG, MP4, PDF and JPEG files are allowed.",
           color: "danger",
         });
       }
@@ -170,11 +193,7 @@ function Chat() {
         });
       }
 
-      // === Upload file via HTTP ===
       try {
-        // const uploadForm = new FormData();
-        // uploadForm.append("file", file);
-
         const { data: uploadRes } = await axiosIns.post(
           `/chats/${selectedChat?._id}/upload?receiver=${selectedUser?._id}`,
           formdata,
@@ -183,15 +202,16 @@ function Chat() {
           }
         );
 
-        // Emit message with file
+        // Emit message with file (and encrypted text if any)
         socket.emit(
           "send-message",
           {
-            text,
-            files: uploadRes.files, // URL from backend
+            text: encryptedText,
+            iv,
+            files: uploadRes.files, // Array of uploaded file URLs or info
             senderId: user._id,
-            chatId: selectedChat?._id,
-            receiverId: selectedUser?._id,
+            chatId: selectedChat._id,
+            receiverId: selectedUser._id,
           },
           handleSocketResponse
         );
@@ -204,18 +224,20 @@ function Chat() {
         });
       }
     } else {
-      // === Text only ===
+      // Text-only message
       socket.emit(
         "send-message",
         {
-          text,
+          text: encryptedText,
+          iv,
           senderId: user._id,
-          chatId: selectedChat?._id,
-          receiverId: selectedUser?._id,
+          chatId: selectedChat._id,
+          receiverId: selectedUser._id,
         },
         handleSocketResponse
       );
     }
+
     handleTypingEvent(false);
     setFiles([]);
   };

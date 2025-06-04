@@ -9,17 +9,27 @@ import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
 import { storePrivateKey } from "@/services/keyManager";
 
 async function setupKeysAndSendToServer(userId) {
-  const { publicKey, privateKey } = await generateECDHKeyPair();
-
-  // Store private key in IndexedDB
-  await storePrivateKey(privateKey);
-
-  // Export public key and send to backend
-  const exportedPublicKey = await exportPublicKey(publicKey);
-  await axiosIns.post("/api/users/public-key", {
-    userId,
-    publicKey: exportedPublicKey,
-  });
+  try {
+    
+    const { publicKey, privateKey } = await generateECDHKeyPair();
+    
+    // Store private key in IndexedDB
+    await storePrivateKey(privateKey);
+    
+    // Export public key and send to backend
+    const exportedPublicKey = await exportPublicKey(publicKey);
+    await axiosIns.put("/users/public-key", {
+      userId,
+      publicKey: exportedPublicKey,
+    });
+  } catch (error) {
+    console.error("Error setting up keys:", error);
+    addToast({
+      title: "Key Setup Failed",
+      description: "Failed to set up encryption keys. Please try again.",
+      color: "danger",
+    });
+  }
 }
 
 const AuthContext = createContext({
