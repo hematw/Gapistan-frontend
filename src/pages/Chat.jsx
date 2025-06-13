@@ -113,21 +113,25 @@ function Chat() {
         description: "Could not retrieve the other user's public key.",
         color: "danger",
       });
+      2;
     }
   }
 
-  // E2EE sendMessage
   const sendMessage = async (formdata) => {
     if (!socket) {
       console.log("Socket not initialized");
       return;
     }
 
-    const text = formdata.get("text")?.trim();
+    const rawText = formdata.get("text");
+    const text = rawText ? rawText.trim() : "";
     const file = formdata.get("files");
 
     // === Validate empty submission ===
-    if (!text && (!file || file.size === 0)) {
+    const isTextEmpty = text === "";
+    const isFileEmpty = !file || file.size === 0;
+
+    if (isTextEmpty && isFileEmpty) {
       return addToast({
         title: "Empty Message",
         description: "Cannot send an empty message without text or file",
@@ -138,21 +142,36 @@ function Chat() {
     let encryptedText = null;
     let iv = null;
 
-    if (text && ecdhKeyPair && selectedUser) {
+    // === Encrypt text if present ===
+    if (!isTextEmpty && ecdhKeyPair && selectedChat) {
+      let otherUser;
       try {
+        if (!selectedChat.isGroup) {
+          console.log("first time sending message to user");
+          otherUser = selectedChat.members.find((m) => m._id !== user._id);
+        }
+        console.log(selectedChat, selectedUser, otherUser);
         const otherPubKey = await getOtherUserPublicKey(
-          selectedChat._id,
-          selectedUser._id
+          selectedChat?._id,
+          selectedUser?._id || otherUser?._id
         );
+
         const aesKey = await deriveSharedAESKey(
           ecdhKeyPair.privateKey,
           otherPubKey
         );
+
         const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
+
+        if (!ciphertext || ciphertext.byteLength === 0) {
+          throw new Error("Encryption returned empty ciphertext");
+        }
+
         encryptedText = btoa(
           String.fromCharCode(...new Uint8Array(ciphertext))
         );
-        iv = Array.from(textIv); // To store IV with the message
+
+        iv = Array.from(textIv); // Convert to array for socket transport
       } catch (error) {
         console.error("Encryption failed:", error);
         return addToast({
@@ -175,7 +194,15 @@ function Chat() {
       "application/pdf",
     ];
 
-    if (file && file.size > 0) {
+    const payload = {
+      text: encryptedText,
+      iv,
+      senderId: user?._id,
+      chatId: selectedChat?._id,
+      receiverId: selectedUser?._id || selectedChat?.members.find(m => m._id !== user._id)?._id,
+    };
+
+    if (!isFileEmpty) {
       if (!allowedTypes.includes(file.type)) {
         return addToast({
           title: "Unsupported file type",
@@ -202,19 +229,7 @@ function Chat() {
           }
         );
 
-        // Emit message with file (and encrypted text if any)
-        socket.emit(
-          "send-message",
-          {
-            text: encryptedText,
-            iv,
-            files: uploadRes.files, // Array of uploaded file URLs or info
-            senderId: user._id,
-            chatId: selectedChat._id,
-            receiverId: selectedUser._id,
-          },
-          handleSocketResponse
-        );
+        payload.files = uploadRes.files || [];
       } catch (err) {
         console.error("File upload failed:", err);
         return addToast({
@@ -223,20 +238,11 @@ function Chat() {
           color: "danger",
         });
       }
-    } else {
-      // Text-only message
-      socket.emit(
-        "send-message",
-        {
-          text: encryptedText,
-          iv,
-          senderId: user._id,
-          chatId: selectedChat._id,
-          receiverId: selectedUser._id,
-        },
-        handleSocketResponse
-      );
     }
+
+    // === Final Emit ===
+    console.log("Sending message payload:", payload);
+    socket.emit("send-message", payload, handleSocketResponse);
 
     handleTypingEvent(false);
     setFiles([]);
@@ -367,10 +373,10 @@ function Chat() {
       if (!chatTimeline?.messages || !ecdhKeyPair) return;
       for (const group of chatTimeline.messages) {
         for (const msg of group.items) {
-          if (msg.text && msg.iv && msg.senderId !== user._id) {
+          if (msg.text && msg.iv && msg.sender !== user._id) {
             const otherPubKey = await getOtherUserPublicKey(
               selectedChat._id,
-              msg.senderId
+              msg.sender._id
             );
             const aesKey = await deriveSharedAESKey(
               ecdhKeyPair.privateKey,

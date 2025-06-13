@@ -6,30 +6,15 @@ import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
-import { storePrivateKey } from "@/services/keyManager";
+import { storePrivateKey, deletePrivateKey } from "@/services/keyManager";
 
-async function setupKeysAndSendToServer(userId) {
-  try {
-    
-    const { publicKey, privateKey } = await generateECDHKeyPair();
-    
-    // Store private key in IndexedDB
-    await storePrivateKey(privateKey);
-    
-    // Export public key and send to backend
-    const exportedPublicKey = await exportPublicKey(publicKey);
-    await axiosIns.put("/users/public-key", {
-      userId,
-      publicKey: exportedPublicKey,
-    });
-  } catch (error) {
-    console.error("Error setting up keys:", error);
-    addToast({
-      title: "Key Setup Failed",
-      description: "Failed to set up encryption keys. Please try again.",
-      color: "danger",
-    });
-  }
+async function setupKeysAndSendToServer() {
+  const keyPair = await generateECDHKeyPair();
+  const publicJwk = await exportPublicKey(keyPair.publicKey);
+
+  await storePrivateKey(keyPair.privateKey);
+
+  await axiosIns.put("/users/public-key", { publicKey: publicJwk });
 }
 
 const AuthContext = createContext({
@@ -58,6 +43,7 @@ export default function AuthProvider({ children }) {
     queryClient.clear();
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    await deletePrivateKey();
     setUser(null);
   }
 

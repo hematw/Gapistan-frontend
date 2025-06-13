@@ -73,3 +73,24 @@ export async function decryptMessage(aesKey, ciphertext, iv) {
     );
     return new TextDecoder().decode(decrypted);
 }
+
+export async function savePrivateKeyToLocal(privateKey) {
+    const exported = await crypto.subtle.exportKey("jwk", privateKey);
+    localStorage.setItem("ecdhPrivateKey", JSON.stringify(exported));
+}
+
+export async function loadPrivateKeyFromLocal() {
+    const item = localStorage.getItem("ecdhPrivateKey");
+    if (!item) return null;
+    const jwk = JSON.parse(item);
+    return await crypto.subtle.importKey(
+        "jwk",
+        jwk,
+        {
+            name: "ECDH",
+            namedCurve: "P-256",
+        },
+        true,
+        ["deriveKey"]
+    );
+}

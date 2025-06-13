@@ -1,4 +1,4 @@
-import { set, get } from "idb-keyval";
+import { set, get, del } from "idb-keyval";
 
 const PRIVATE_KEY_NAME = "ecdhe-private-key";
 
@@ -9,4 +9,8 @@ export async function storePrivateKey(key) {
 
 export async function getPrivateKey() {
     return await get(PRIVATE_KEY_NAME);
+}
+
+export async function deletePrivateKey() {
+    await del(PRIVATE_KEY_NAME);
 }
