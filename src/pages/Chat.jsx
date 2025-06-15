@@ -117,6 +117,19 @@ function Chat() {
     }
   }
 
+  const sharedTest = async () => {
+  const myKeyPair = await generateECDHKeyPair();
+  const exportedMyPub = await exportPublicKey(myKeyPair.publicKey);
+  const importedTheirPub = await importPublicKey(exportedMyPub);
+
+  const myAESKey = await deriveSharedAESKey(myKeyPair.privateKey, importedTheirPub);
+
+  const rawKey = await crypto.subtle.exportKey("raw", myAESKey);
+  console.log("🔑 Derived AES key bytes:", new Uint8Array(rawKey));
+};
+
+sharedTest();
+
   const sendMessage = async (formdata) => {
     if (!socket) {
       console.log("Socket not initialized");
@@ -162,7 +175,7 @@ function Chat() {
         );
 
         const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
-
+        console.log("when encryption", aesKey, ciphertext, textIv);
         if (!ciphertext || ciphertext.byteLength === 0) {
           throw new Error("Encryption returned empty ciphertext");
         }
@@ -199,7 +212,9 @@ function Chat() {
       iv,
       senderId: user?._id,
       chatId: selectedChat?._id,
-      receiverId: selectedUser?._id || selectedChat?.members.find(m => m._id !== user._id)?._id,
+      receiverId:
+        selectedUser?._id ||
+        selectedChat?.members.find((m) => m._id !== user._id)?._id,
     };
 
     if (!isFileEmpty) {
@@ -374,21 +389,27 @@ function Chat() {
       for (const group of chatTimeline.messages) {
         for (const msg of group.items) {
           if (msg.text && msg.iv && msg.sender !== user._id) {
-            const otherPubKey = await getOtherUserPublicKey(
-              selectedChat._id,
-              msg.sender._id
-            );
-            const aesKey = await deriveSharedAESKey(
-              ecdhKeyPair.privateKey,
-              otherPubKey
-            );
-            const ciphertext = new Uint8Array(
-              atob(msg.text)
-                .split("")
-                .map((c) => c.charCodeAt(0))
-            );
-            const iv = new Uint8Array(msg.iv);
-            msg.text = await decryptMessage(aesKey, ciphertext, iv);
+            try {
+              const otherPubKey = await getOtherUserPublicKey(
+                selectedChat._id,
+                msg.sender._id
+              );
+              const aesKey = await deriveSharedAESKey(
+                ecdhKeyPair.privateKey,
+                otherPubKey
+              );
+              const ciphertext = new Uint8Array(
+                atob(msg.text)
+                  .split("")
+                  .map((c) => c.charCodeAt(0))
+              );
+              const iv = new Uint8Array(msg.iv);
+              console.log("before decrypt");
+              msg.text = await decryptMessage(aesKey, ciphertext, iv);
+              console.log("after decrypt");
+            } catch (error) {
+              console.log("error decrypting message", error);
+            }
           }
         }
       }

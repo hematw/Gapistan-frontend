@@ -63,6 +63,7 @@ export async function encryptMessage(aesKey, plaintext) {
 }
 
 export async function decryptMessage(aesKey, ciphertext, iv) {
+    console.log("decryptMessage", aesKey, ciphertext, iv);
     const decrypted = await crypto.subtle.decrypt(
         {
             name: "AES-GCM",
