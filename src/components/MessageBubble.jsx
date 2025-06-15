@@ -117,7 +117,7 @@ function MessageBubble({ message }) {
           </div>
         </div>
 
-        {message.text && <p className="mt-1">{message.text}</p>}
+        {message.decryptedText && <p className="mt-1">{message.decryptedText}</p>}
 
         {Array.isArray(message.files) && message.files.length > 0 && (
           <div className="flex flex-col gap-2 mt-2">

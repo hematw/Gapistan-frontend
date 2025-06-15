@@ -23,13 +23,13 @@ import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
 import {
-  generateECDHKeyPair,
   exportPublicKey,
   importPublicKey,
   deriveSharedAESKey,
   encryptMessage,
   decryptMessage,
 } from "../utils/crypto";
+import { getPrivateKey } from "../services/keyManager";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -69,8 +69,7 @@ function Chat() {
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
 
-  // E2EE: Store key pairs and public keys in state (or context for real app)
-  const [ecdhKeyPair, setEcdhKeyPair] = useState(null);
+  const [privateKey, setPrivateKey] = useState(null);
   const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
 
   useSeenHandler({
@@ -86,14 +85,13 @@ function Chat() {
 
   // On mount, generate ECDH key pair if not present
   useEffect(() => {
-    async function setupKeys() {
-      if (!ecdhKeyPair) {
-        const keyPair = await generateECDHKeyPair();
-        setEcdhKeyPair(keyPair);
-        // Optionally: send public key to server for sharing with other users
+    async function setupKey() {
+      if (!privateKey) {
+        const key = await getPrivateKey();
+        setPrivateKey(key);
       }
     }
-    setupKeys();
+    setupKey();
   }, []);
 
   // Helper: get or fetch other user's public key for this chat
@@ -143,26 +141,21 @@ function Chat() {
     let iv = null;
 
     // === Encrypt text if present ===
-    if (!isTextEmpty && ecdhKeyPair && selectedChat) {
+    if (!isTextEmpty && privateKey && selectedChat) {
       let otherUser;
       try {
         if (!selectedChat.isGroup) {
-          console.log("first time sending message to user");
           otherUser = selectedChat.members.find((m) => m._id !== user._id);
         }
-        console.log(selectedChat, selectedUser, otherUser);
         const otherPubKey = await getOtherUserPublicKey(
           selectedChat?._id,
           selectedUser?._id || otherUser?._id
         );
 
-        const aesKey = await deriveSharedAESKey(
-          ecdhKeyPair.privateKey,
-          otherPubKey
-        );
+        const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
 
+        console.log("Aes key", aesKey);
         const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
-
         if (!ciphertext || ciphertext.byteLength === 0) {
           throw new Error("Encryption returned empty ciphertext");
         }
@@ -199,7 +192,9 @@ function Chat() {
       iv,
       senderId: user?._id,
       chatId: selectedChat?._id,
-      receiverId: selectedUser?._id || selectedChat?.members.find(m => m._id !== user._id)?._id,
+      receiverId:
+        selectedUser?._id ||
+        selectedChat?.members.find((m) => m._id !== user._id)?._id,
     };
 
     if (!isFileEmpty) {
@@ -248,10 +243,35 @@ function Chat() {
     setFiles([]);
   };
 
-  const handleSocketResponse = ({ message, error, data }) => {
+  const handleSocketResponse = async ({ message, error, data }) => {
+    // Make it async
     console.log(message);
 
     if (!error) {
+      let decryptedOutgoingText = null;
+      if (data.text && data.iv && privateKey && selectedChat) {
+        try {
+          const otherUser = selectedChat.members.find(
+            (m) => m._id !== user._id
+          );
+          const otherPubKey = await getOtherUserPublicKey(
+            selectedChat._id,
+            otherUser._id
+          );
+          const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
+          const ciphertext = new Uint8Array(
+            atob(data.text)
+              .split("")
+              .map((c) => c.charCodeAt(0))
+          );
+          const iv = new Uint8Array(data.iv);
+          decryptedOutgoingText = await decryptMessage(aesKey, ciphertext, iv);
+        } catch (err) {
+          console.error("Error decrypting sent message:", err);
+          decryptedOutgoingText = "[Decryption Failed for Sent Message]";
+        }
+      }
+
       // Update chat timeline
       queryClient.setQueryData(
         ["chats", selectedChat._id, "timeline"],
@@ -261,18 +281,21 @@ function Chat() {
           const newMessages = [...oldData.messages];
           const length = newMessages.length;
 
+          const messageToAdd = {
+            ...data,
+            contentType: data.file ? "file" : "message",
+            decryptedText: decryptedOutgoingText, // Add the decrypted text here
+          };
+
           if (
             length > 0 &&
             newMessages[length - 1].label.toLowerCase() === "today"
           ) {
-            newMessages[length - 1].items.push({
-              ...data,
-              contentType: data.file ? "file" : "message",
-            });
+            newMessages[length - 1].items.push(messageToAdd);
           } else {
             newMessages.push({
               label: "Today",
-              items: [{ ...data, contentType: data.file ? "file" : "message" }],
+              items: [messageToAdd],
             });
           }
 
@@ -291,7 +314,7 @@ function Chat() {
 
         const updatedChat = {
           ...prev.chats[chatIndex],
-          lastMessage: data,
+          lastMessage: { ...data, decryptedText: decryptedOutgoingText }, // Also decrypt last message
         };
 
         const newChats = [
@@ -369,32 +392,70 @@ function Chat() {
 
   // E2EE: Decrypt incoming messages
   useEffect(() => {
-    async function decryptTimeline() {
-      if (!chatTimeline?.messages || !ecdhKeyPair) return;
-      for (const group of chatTimeline.messages) {
-        for (const msg of group.items) {
-          if (msg.text && msg.iv && msg.sender !== user._id) {
-            const otherPubKey = await getOtherUserPublicKey(
-              selectedChat._id,
-              msg.sender._id
-            );
-            const aesKey = await deriveSharedAESKey(
-              ecdhKeyPair.privateKey,
-              otherPubKey
-            );
-            const ciphertext = new Uint8Array(
-              atob(msg.text)
-                .split("")
-                .map((c) => c.charCodeAt(0))
-            );
-            const iv = new Uint8Array(msg.iv);
-            msg.text = await decryptMessage(aesKey, ciphertext, iv);
-          }
-        }
-      }
+    async function decryptAndSetTimeline() {
+      if (!chatTimeline?.messages || !privateKey || !selectedChat) return;
+
+      const updatedChatTimeline = { ...chatTimeline };
+      updatedChatTimeline.messages = await Promise.all(
+        chatTimeline.messages.map(async (group) => {
+          const newItems = await Promise.all(
+            group.items.map(async (msg) => {
+              if (
+                msg.text &&
+                msg.iv &&
+                msg.sender !== user._id &&
+                !msg.decryptedText
+              ) {
+                // Add a flag to avoid re-decrypting
+                try {
+                  const otherPubKey = await getOtherUserPublicKey(
+                    selectedChat._id,
+                    msg.sender._id
+                  );
+                  const aesKey = await deriveSharedAESKey(
+                    privateKey,
+                    otherPubKey
+                  );
+                  console.log("🔑 AES Key:", aesKey);
+                  const ciphertext = new Uint8Array(
+                    atob(msg.text)
+                      .split("")
+                      .map((c) => c.charCodeAt(0))
+                  );
+                  const iv = new Uint8Array(msg.iv);
+                  const decrypted = await decryptMessage(
+                    aesKey,
+                    ciphertext,
+                    iv
+                  );
+                  return { ...msg, decryptedText: decrypted }; // Store decrypted text in a new property
+                } catch (error) {
+                  console.error("error decrypting message", error);
+                  return { ...msg, decryptedText: "[Decryption Failed]" };
+                }
+              }
+              return msg; // Return original message if no decryption needed or failed previously
+            })
+          );
+          return { ...group, items: newItems };
+        })
+      );
+
+      // Update the react-query cache with the new, decrypted timeline
+      queryClient.setQueryData(
+        ["chats", selectedChat._id, "timeline"],
+        updatedChatTimeline
+      );
     }
-    decryptTimeline();
-  }, [chatTimeline, ecdhKeyPair, selectedChat]);
+    decryptAndSetTimeline();
+  }, [
+    chatTimeline,
+    privateKey,
+    selectedChat,
+    queryClient,
+    user._id,
+    getOtherUserPublicKey,
+  ]);
 
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline.message || chatsErr.message}</p>;
