@@ -1,5 +1,5 @@
 import { Button } from "@heroui/button";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Bell, Settings } from "lucide-react";
@@ -95,25 +95,28 @@ function Chat() {
   }, []);
 
   // Helper: get or fetch other user's public key for this chat
-  async function getOtherUserPublicKey(chatId, receiverId) {
-    try {
-      if (chatPublicKeys[chatId]) {
-        return await importPublicKey(chatPublicKeys[chatId]);
+  const getOtherUserPublicKey = useCallback(
+    async (chatId, receiverId) => {
+      try {
+        if (chatPublicKeys[chatId]) {
+          return await importPublicKey(chatPublicKeys[chatId]);
+        }
+        // Fetch from server (implement endpoint to get user's public key)
+        const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+        setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
+        return await importPublicKey(data.publicKey);
+      } catch (error) {
+        console.error("Failed to get other user's public key:", error);
+        addToast({
+          title: "Public Key Error",
+          description: "Could not retrieve the other user's public key.",
+          color: "danger",
+        });
+        2;
       }
-      // Fetch from server (implement endpoint to get user's public key)
-      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
-      setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
-      return await importPublicKey(data.publicKey);
-    } catch (error) {
-      console.error("Failed to get other user's public key:", error);
-      addToast({
-        title: "Public Key Error",
-        description: "Could not retrieve the other user's public key.",
-        color: "danger",
-      });
-      2;
-    }
-  }
+    },
+    [chatPublicKeys]
+  );
 
   const sendMessage = async (formdata) => {
     if (!socket) {
@@ -395,6 +398,8 @@ function Chat() {
     async function decryptAndSetTimeline() {
       if (!chatTimeline?.messages || !privateKey || !selectedChat) return;
 
+      const receiver = selectedChat.members.find((m) => m._id !== user._id);
+      console.log("🤦‍♂️🤦‍♂️🤦‍♂️", receiver);
       const updatedChatTimeline = { ...chatTimeline };
       updatedChatTimeline.messages = await Promise.all(
         chatTimeline.messages.map(async (group) => {
@@ -410,7 +415,7 @@ function Chat() {
                 try {
                   const otherPubKey = await getOtherUserPublicKey(
                     selectedChat._id,
-                    msg.sender._id
+                    receiver?._id
                   );
                   const aesKey = await deriveSharedAESKey(
                     privateKey,
