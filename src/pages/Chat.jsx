@@ -1,5 +1,5 @@
 import { Button } from "@heroui/button";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
 import { Bell, Settings } from "lucide-react";
@@ -28,6 +28,8 @@ import {
   deriveSharedAESKey,
   encryptMessage,
   decryptMessage,
+  decryptGroupKey,
+  importAESKey,
 } from "../utils/crypto";
 import { getPrivateKey } from "../services/keyManager";
 
@@ -71,6 +73,7 @@ function Chat() {
 
   const [privateKey, setPrivateKey] = useState(null);
   const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
+  const [groupChatKeys, setGroupChatKeys] = useState({}); // {chatId: publicKeyJwk}
 
   useSeenHandler({
     messagesEndRef: chatEndRef,
@@ -95,25 +98,27 @@ function Chat() {
   }, []);
 
   // Helper: get or fetch other user's public key for this chat
-  async function getOtherUserPublicKey(chatId, receiverId) {
-    try {
-      if (chatPublicKeys[chatId]) {
-        return await importPublicKey(chatPublicKeys[chatId]);
+  const getOtherUserPublicKey = useCallback(
+    async (chatId, receiverId) => {
+      try {
+        if (chatPublicKeys[chatId]) {
+          return await importPublicKey(chatPublicKeys[chatId]);
+        }
+        // Fetch from server (implement endpoint to get user's public key)
+        const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+        setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
+        return await importPublicKey(data.publicKey);
+      } catch (error) {
+        console.error("Failed to get other user's public key:", error);
+        addToast({
+          title: "Public Key Error",
+          description: "Could not retrieve the other user's public key.",
+          color: "danger",
+        });
       }
-      // Fetch from server (implement endpoint to get user's public key)
-      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
-      setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
-      return await importPublicKey(data.publicKey);
-    } catch (error) {
-      console.error("Failed to get other user's public key:", error);
-      addToast({
-        title: "Public Key Error",
-        description: "Could not retrieve the other user's public key.",
-        color: "danger",
-      });
-      2;
-    }
-  }
+    },
+    [chatPublicKeys]
+  );
 
   const sendMessage = async (formdata) => {
     if (!socket) {
@@ -456,6 +461,26 @@ function Chat() {
     user._id,
     getOtherUserPublicKey,
   ]);
+
+  useEffect(() => {
+    const setupGroupKey = async () => {
+      if (!selectedChat || groupChatKeys?.[selectedChat._id]) return;
+      try {
+        const { data } = await axiosIns.get(
+          `/keys/aes-key/${selectedChat._id}`
+        );
+        const rawAESBuffer = await decryptGroupKey(data.key); 
+        const aesCryptoKey = await importAESKey(rawAESBuffer);
+        setGroupChatKeys((prevKeys) => ({
+          ...prevKeys,
+          [selectedChat._id]: aesCryptoKey,
+        }));
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    setupGroupKey();
+  }, [selectedChat]);
 
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline.message || chatsErr.message}</p>;

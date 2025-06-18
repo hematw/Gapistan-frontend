@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 
 import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
 import { storePrivateKey, deletePrivateKey } from "@/services/keyManager";
+import { generateAndSaveRSAKeys } from "../utils/crypto";
 
 async function setupKeysAndSendToServer() {
   const keyPair = await generateECDHKeyPair();
@@ -55,7 +56,9 @@ export default function AuthProvider({ children }) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      await setupKeysAndSendToServer(data.user._id);
+      await setupKeysAndSendToServer();
+      // generate and save RSA Key used for group keys
+      await generateAndSaveRSAKeys()
 
       addToast({
         title: "Success",
