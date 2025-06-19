@@ -400,6 +400,8 @@ function Chat() {
     async function decryptAndSetTimeline() {
       if (!chatTimeline?.messages || !privateKey || !selectedChat) return;
 
+      const receiver = selectedChat.members.find((m) => m._id !== user._id);
+      console.log("🤦‍♂️🤦‍♂️🤦‍♂️", receiver);
       const updatedChatTimeline = { ...chatTimeline };
       updatedChatTimeline.messages = await Promise.all(
         chatTimeline.messages.map(async (group) => {
@@ -415,7 +417,7 @@ function Chat() {
                 try {
                   const otherPubKey = await getOtherUserPublicKey(
                     selectedChat._id,
-                    msg.sender._id
+                    receiver?._id
                   );
                   const aesKey = await deriveSharedAESKey(
                     privateKey,
