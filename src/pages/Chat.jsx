@@ -28,6 +28,8 @@ import {
   deriveSharedAESKey,
   encryptMessage,
   decryptMessage,
+  decryptGroupKey,
+  importAESKey,
 } from "../utils/crypto";
 import { getPrivateKey } from "../services/keyManager";
 
@@ -71,6 +73,7 @@ function Chat() {
 
   const [privateKey, setPrivateKey] = useState(null);
   const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
+  const [groupChatKeys, setGroupChatKeys] = useState({}); // {chatId: publicKeyJwk}
 
   useSeenHandler({
     messagesEndRef: chatEndRef,
@@ -112,7 +115,6 @@ function Chat() {
           description: "Could not retrieve the other user's public key.",
           color: "danger",
         });
-        2;
       }
     },
     [chatPublicKeys]
@@ -461,6 +463,26 @@ function Chat() {
     user._id,
     getOtherUserPublicKey,
   ]);
+
+  useEffect(() => {
+    const setupGroupKey = async () => {
+      if (!selectedChat || groupChatKeys?.[selectedChat._id]) return;
+      try {
+        const { data } = await axiosIns.get(
+          `/keys/aes-key/${selectedChat._id}`
+        );
+        const rawAESBuffer = await decryptGroupKey(data.key); 
+        const aesCryptoKey = await importAESKey(rawAESBuffer);
+        setGroupChatKeys((prevKeys) => ({
+          ...prevKeys,
+          [selectedChat._id]: aesCryptoKey,
+        }));
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    setupGroupKey();
+  }, [selectedChat]);
 
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline.message || chatsErr.message}</p>;
