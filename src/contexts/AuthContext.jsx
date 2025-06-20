@@ -1,7 +1,7 @@
 import axiosIns from "@/utils/axios";
 import { addToast } from "@heroui/toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { isAxiosError } from "axios";
+import axios, { isAxiosError } from "axios";
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -50,7 +50,7 @@ export default function AuthProvider({ children }) {
 
   async function signIn(values) {
     try {
-      const { data } = await axiosIns.post("/auth/signin", values);
+      const { data } = await axios.post(import.meta.env.VITE_API_URL+"/auth/signin", values);
       console.log(data);
       setUser(data.user);
       localStorage.setItem("token", data.token);

@@ -60,8 +60,14 @@ export async function encryptMessage(aesKey, plaintext) {
   return { ciphertext, iv };
 }
 
-export async function decryptMessage(aesKey, ciphertext, iv) {
-  console.log("decryptMessage", aesKey, ciphertext, iv);
+export async function decryptMessage(aesKey, text, msgIv) {
+  const ciphertext = new Uint8Array(
+    atob(text)
+      .split("")
+      .map((c) => c.charCodeAt(0))
+  );
+
+  const iv = new Uint8Array(msgIv);
   const decrypted = await crypto.subtle.decrypt(
     {
       name: "AES-GCM",
@@ -71,11 +77,6 @@ export async function decryptMessage(aesKey, ciphertext, iv) {
     ciphertext
   );
   return new TextDecoder().decode(decrypted);
-}
-
-export async function savePrivateKeyToLocal(privateKey) {
-  const exported = await crypto.subtle.exportKey("jwk", privateKey);
-  localStorage.setItem("ecdhPrivateKey", JSON.stringify(exported));
 }
 
 export async function loadPrivateKeyFromLocal() {
@@ -127,34 +128,56 @@ export async function generateAndSaveRSAKeys() {
   return { publicKey: publicKeyJwk, privateKey: privateKeyJwk };
 }
 
-export async function decryptGroupKey(encryptedGroupKeyBase64) {
-  const privateKey = await getRsaPrivateKey();
+export async function decryptGroupAESKey(encryptedKeyBase64) {
+  const jwkPrivateKey = await getRsaPrivateKey(); // your JWK object
 
-  if (!privateKey) {
-    throw new Error("RSA Private Key not found in storage");
-  }
+  if (!jwkPrivateKey) throw new Error("No private key found");
 
-  // Convert from base64 to ArrayBuffer
-  const encryptedBuffer = Uint8Array.from(atob(encryptedGroupKeyBase64), c => c.charCodeAt(0));
+  // 🔑 Step 1: Import JWK into CryptoKey
+  const privateKey = await crypto.subtle.importKey(
+    "jwk",
+    jwkPrivateKey,
+    {
+      name: "RSA-OAEP",
+      hash: "SHA-256", // match your key's alg "RSA-OAEP-256"
+    },
+    true,
+    ["decrypt"]
+  );
 
-  // Decrypt using SubtleCrypto
-  const decryptedKeyBuffer = await window.crypto.subtle.decrypt(
+  // 🔒 Step 2: Convert base64 string into Uint8Array buffer
+  const encryptedBuffer = Uint8Array.from(
+    atob(encryptedKeyBase64),
+    (c) => c.charCodeAt(0)
+  );
+
+  // 🔓 Step 3: Decrypt the group AES key using RSA
+  const aesKeyRaw = await window.crypto.subtle.decrypt(
     {
       name: "RSA-OAEP",
     },
-    privateKey,
+    privateKey, // now it's a proper CryptoKey
     encryptedBuffer
   );
 
-  return decryptedKeyBuffer; // This is your AES key as ArrayBuffer
-}
-
-export async function importAESKey(rawKeyBuffer) {
-  return await window.crypto.subtle.importKey(
+  // 🔁 Step 4: Import decrypted AES key
+  const aesKey = await crypto.subtle.importKey(
     "raw",
-    rawKeyBuffer,
-    "AES-GCM",
-    true,
+    aesKeyRaw,
+    { name: "AES-GCM" },
+    false,
     ["encrypt", "decrypt"]
   );
+
+  return aesKey;
+}
+
+export function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
 }

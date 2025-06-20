@@ -23,13 +23,11 @@ import useChatSocket from "../hooks/useChatSocket";
 import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
 import {
-  exportPublicKey,
   importPublicKey,
   deriveSharedAESKey,
   encryptMessage,
   decryptMessage,
-  decryptGroupKey,
-  importAESKey,
+  decryptGroupAESKey,
 } from "../utils/crypto";
 import { getPrivateKey } from "../services/keyManager";
 
@@ -145,38 +143,55 @@ function Chat() {
     let encryptedText = null;
     let iv = null;
 
-    // === Encrypt text if present ===
-    if (!isTextEmpty && privateKey && selectedChat) {
-      let otherUser;
-      try {
-        if (!selectedChat.isGroup) {
-          otherUser = selectedChat.members.find((m) => m._id !== user._id);
-        }
-        const otherPubKey = await getOtherUserPublicKey(
-          selectedChat?._id,
-          selectedUser?._id || otherUser?._id
+    if (selectedChat?.isGroup) {
+      console.log("this is a group chat");
+      const groupChatKey = groupChatKeys[selectedChat._id];
+      if (groupChatKey) {
+        const { ciphertext, iv: textIv } = await encryptMessage(
+          groupChatKey,
+          text
         );
-
-        const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
-
-        console.log("Aes key", aesKey);
-        const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
-        if (!ciphertext || ciphertext.byteLength === 0) {
-          throw new Error("Encryption returned empty ciphertext");
-        }
-
         encryptedText = btoa(
           String.fromCharCode(...new Uint8Array(ciphertext))
         );
+        iv = Array.from(textIv);
+      } else {
+        console.error("Group chat key not found");
+      }
+    } else {
+      // === Encrypt text if present ===}
+      if (!isTextEmpty && privateKey && selectedChat) {
+        let otherUser;
+        try {
+          if (!selectedChat.isGroup) {
+            otherUser = selectedChat.members.find((m) => m._id !== user._id);
+          }
+          const otherPubKey = await getOtherUserPublicKey(
+            selectedChat?._id,
+            selectedUser?._id || otherUser?._id
+          );
 
-        iv = Array.from(textIv); // Convert to array for socket transport
-      } catch (error) {
-        console.error("Encryption failed:", error);
-        return addToast({
-          title: "Encryption Error",
-          description: "Could not encrypt message.",
-          color: "danger",
-        });
+          const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
+
+          console.log("Aes key", aesKey);
+          const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
+          if (!ciphertext || ciphertext.byteLength === 0) {
+            throw new Error("Encryption returned empty ciphertext");
+          }
+
+          encryptedText = btoa(
+            String.fromCharCode(...new Uint8Array(ciphertext))
+          );
+
+          iv = Array.from(textIv); // Convert to array for socket transport
+        } catch (error) {
+          console.error("Encryption failed:", error);
+          return addToast({
+            title: "Encryption Error",
+            description: "Could not encrypt message.",
+            color: "danger",
+          });
+        }
       }
     }
 
@@ -249,35 +264,40 @@ function Chat() {
   };
 
   const handleSocketResponse = async ({ message, error, data }) => {
-    // Make it async
-    console.log(message);
+    console.log(message, error, data);
 
     if (!error) {
       let decryptedOutgoingText = null;
       if (data.text && data.iv && privateKey && selectedChat) {
         try {
-          const otherUser = selectedChat.members.find(
-            (m) => m._id !== user._id
-          );
-          const otherPubKey = await getOtherUserPublicKey(
-            selectedChat._id,
-            otherUser._id
-          );
-          const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
-          const ciphertext = new Uint8Array(
-            atob(data.text)
-              .split("")
-              .map((c) => c.charCodeAt(0))
-          );
+          let aesKey;
+
+          if (selectedChat.isGroup) {
+            aesKey = groupChatKeys[selectedChat._id];
+            if (!aesKey) {
+              console.warn("Missing group AES key for decryption");
+              throw new Error("Group AES key not loaded yet");
+            }
+          } else {
+            const otherUser = selectedChat.members.find(
+              (m) => m._id !== user._id
+            );
+            const otherPubKey = await getOtherUserPublicKey(
+              selectedChat._id,
+              otherUser._id
+            );
+            aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
+          }
+          
           const iv = new Uint8Array(data.iv);
-          decryptedOutgoingText = await decryptMessage(aesKey, ciphertext, iv);
+          decryptedOutgoingText = await decryptMessage(aesKey, data.text, iv);
         } catch (err) {
           console.error("Error decrypting sent message:", err);
           decryptedOutgoingText = "[Decryption Failed for Sent Message]";
         }
       }
 
-      // Update chat timeline
+      // Your code to update chat timeline remains unchanged...
       queryClient.setQueryData(
         ["chats", selectedChat._id, "timeline"],
         (oldData) => {
@@ -289,7 +309,7 @@ function Chat() {
           const messageToAdd = {
             ...data,
             contentType: data.file ? "file" : "message",
-            decryptedText: decryptedOutgoingText, // Add the decrypted text here
+            decryptedText: decryptedOutgoingText,
           };
 
           if (
@@ -308,7 +328,7 @@ function Chat() {
         }
       );
 
-      // Update chats list and move this chat to the top
+      // Update chat list last message
       queryClient.setQueryData(["chats"], (prev) => {
         if (!prev || !Array.isArray(prev.chats)) return prev;
 
@@ -319,7 +339,7 @@ function Chat() {
 
         const updatedChat = {
           ...prev.chats[chatIndex],
-          lastMessage: { ...data, decryptedText: decryptedOutgoingText }, // Also decrypt last message
+          lastMessage: { ...data, decryptedText: decryptedOutgoingText },
         };
 
         const newChats = [
@@ -395,14 +415,57 @@ function Chat() {
     setTypingMessage,
   });
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const setupGroupKey = async () => {
+      if (!selectedChat || groupChatKeys[selectedChat._id]) return;
+      try {
+        const { data } = await axiosIns.get(
+          `/keys/aes-key/${selectedChat._id}`
+        );
+
+        if (!data?.key) throw new Error("Encrypted key not received");
+
+        const aesCryptoKey = await decryptGroupAESKey(data.key);
+
+        if (isMounted) {
+          setGroupChatKeys((prevKeys) => ({
+            ...prevKeys,
+            [selectedChat._id]: aesCryptoKey,
+          }));
+
+          // ✅ Force re-decryption if needed
+          queryClient.invalidateQueries([
+            "chats",
+            selectedChat._id,
+            "timeline",
+          ]);
+        }
+      } catch (error) {
+        console.error("Failed to set up group key:", error);
+      }
+    };
+
+    setupGroupKey();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedChat]);
+
   // E2EE: Decrypt incoming messages
   useEffect(() => {
     async function decryptAndSetTimeline() {
       if (!chatTimeline?.messages || !privateKey || !selectedChat) return;
 
+      // 💡 Wait until group key is available
+      if (selectedChat.isGroup && !groupChatKeys[selectedChat._id]) return;
+
       const receiver = selectedChat.members.find((m) => m._id !== user._id);
-      console.log("🤦‍♂️🤦‍♂️🤦‍♂️", receiver);
+
       const updatedChatTimeline = { ...chatTimeline };
+
       updatedChatTimeline.messages = await Promise.all(
         chatTimeline.messages.map(async (group) => {
           const newItems = await Promise.all(
@@ -413,76 +476,52 @@ function Chat() {
                 msg.sender !== user._id &&
                 !msg.decryptedText
               ) {
-                // Add a flag to avoid re-decrypting
                 try {
-                  const otherPubKey = await getOtherUserPublicKey(
-                    selectedChat._id,
-                    receiver?._id
-                  );
-                  const aesKey = await deriveSharedAESKey(
-                    privateKey,
-                    otherPubKey
-                  );
-                  console.log("🔑 AES Key:", aesKey);
-                  const ciphertext = new Uint8Array(
-                    atob(msg.text)
-                      .split("")
-                      .map((c) => c.charCodeAt(0))
-                  );
-                  const iv = new Uint8Array(msg.iv);
+                  let aesKey;
+                  if (selectedChat.isGroup) {
+                    aesKey = groupChatKeys[selectedChat._id];
+                  } else {
+                    const otherPubKey = await getOtherUserPublicKey(
+                      selectedChat._id,
+                      receiver?._id
+                    );
+                    aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
+                  }
+
                   const decrypted = await decryptMessage(
                     aesKey,
-                    ciphertext,
-                    iv
+                    msg.text,
+                    msg.iv
                   );
-                  return { ...msg, decryptedText: decrypted }; // Store decrypted text in a new property
+                  return { ...msg, decryptedText: decrypted };
                 } catch (error) {
                   console.error("error decrypting message", error);
                   return { ...msg, decryptedText: "[Decryption Failed]" };
                 }
               }
-              return msg; // Return original message if no decryption needed or failed previously
+              return msg;
             })
           );
           return { ...group, items: newItems };
         })
       );
 
-      // Update the react-query cache with the new, decrypted timeline
       queryClient.setQueryData(
         ["chats", selectedChat._id, "timeline"],
         updatedChatTimeline
       );
     }
+
     decryptAndSetTimeline();
   }, [
     chatTimeline,
     privateKey,
     selectedChat,
+    groupChatKeys, // 💡 Depend on this!
     queryClient,
     user._id,
     getOtherUserPublicKey,
   ]);
-
-  useEffect(() => {
-    const setupGroupKey = async () => {
-      if (!selectedChat || groupChatKeys?.[selectedChat._id]) return;
-      try {
-        const { data } = await axiosIns.get(
-          `/keys/aes-key/${selectedChat._id}`
-        );
-        const rawAESBuffer = await decryptGroupKey(data.key); 
-        const aesCryptoKey = await importAESKey(rawAESBuffer);
-        setGroupChatKeys((prevKeys) => ({
-          ...prevKeys,
-          [selectedChat._id]: aesCryptoKey,
-        }));
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    setupGroupKey();
-  }, [selectedChat]);
 
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline.message || chatsErr.message}</p>;
