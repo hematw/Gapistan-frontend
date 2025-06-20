@@ -9,11 +9,15 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@heroui/button";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { User as LoggedInUser } from "@heroui/user";
+import getFileURL from "../utils/setFileURL";
 
 const Home = () => {
   const navigate = useNavigate();
-
+  const { isLoggedIn, user, logout } = useAuth();
+  console.log(user);
   return (
     <div className="bg-gradient-to-b from-gray-700 to-black min-h-screen text-gray-800">
       <nav className="mx-auto px-6 py-4 container">
@@ -23,21 +27,42 @@ const Home = () => {
             <span className="font-bold text-white text-2xl">Gapistan</span>
           </div>
           <div className="hidden md:flex space-x-4">
-            <Button
-              onPress={() => navigate("/chat")}
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all"
+            <Link
+              to="/features"
+              className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all"
             >
               Features
-            </Button>
-            <Button className="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all">
-              About
-            </Button>
-            <Button
-              className="bg-white hover:bg-opacity-90 text-lime-600 transition-all"
-              onPress={() => navigate("/signin")}
+            </Link>
+            <Link
+              to="/about"
+              className="px-4 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white transition-all"
             >
-              Sign In
-            </Button>
+              About
+            </Link>
+            {user ? (
+              <>
+                <Button
+                  className="px-4 py-2 rounded-xl bg-white hover:bg-opacity-90 text-lime-600 transition-all"
+                  onPress={logout}
+                >
+                  Log Out
+                </Button>
+                <LoggedInUser
+                  name={user.firstName + " " + user.lastName}
+                  avatarProps={{
+                    src: getFileURL(user.profile),
+                    fallback: user.firstName[0].toUpperCase(),
+                  }}
+                />
+              </>
+            ) : (
+              <Link
+                className="px-4 py-2 rounded-xl bg-white hover:bg-opacity-90 text-lime-600 transition-all"
+                to="/signin"
+              >
+                 Sign In
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -60,14 +85,16 @@ const Home = () => {
               className="bg-white hover:bg-opacity-90 shadow-lg px-8 py-3 rounded-full font-medium text-lime-600 text-lg transition-all"
               onPress={() => navigate("/signin")}
             >
-              Get Started
+              Chat Now
             </Button>
-            <Button
-              className="bg-transparent hover:bg-white/10 shadow-lg px-8 py-3 border-2 border-white rounded-full font-medium text-white text-lg transition-all"
-              onPress={() => navigate("/signup")}
-            >
-              Sign Up
-            </Button>
+            {!isLoggedIn && (
+              <Button
+                className="bg-transparent hover:bg-white/10 shadow-lg px-8 py-3 border-2 border-white rounded-full font-medium text-white text-lg transition-all"
+                onPress={() => navigate("/signup")}
+              >
+                Sign Up
+              </Button>
+            )}
           </div>
         </motion.div>
 
@@ -168,24 +195,26 @@ const Home = () => {
           </motion.div>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white/10 backdrop-blur-md mb-16 p-10 rounded-2xl text-white text-center"
-        >
-          <h2 className="mb-4 font-bold text-3xl">Ready to get started?</h2>
-          <p className="mx-auto mb-8 max-w-2xl text-xl">
-            Join thousands of users already enjoying the seamless communication
-            experience on Gapistan
-          </p>
-          <Button
-            className="bg-white hover:bg-opacity-90 shadow-lg px-8 py-3 rounded-full font-medium text-lime-600 text-lg"
-            onPress={() => navigate("/signup")}
+        {!isLoggedIn && (
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white/10 backdrop-blur-md mb-16 p-10 rounded-2xl text-white text-center"
           >
-            Create Your Account
-          </Button>
-        </motion.div>
+            <h2 className="mb-4 font-bold text-3xl">Ready to get started?</h2>
+            <p className="mx-auto mb-8 max-w-2xl text-xl">
+              Join thousands of users already enjoying the seamless
+              communication experience on Gapistan
+            </p>
+            <Button
+              className="bg-white hover:bg-opacity-90 shadow-lg px-8 py-3 rounded-full font-medium text-lime-600 text-lg"
+              onPress={() => navigate("/signup")}
+            >
+              Create Your Account
+            </Button>
+          </motion.div>
+        )}
 
         <footer className="py-6 text-white/70 text-center">
           <p>© {new Date().getFullYear()} Gapistan. All rights reserved.</p>

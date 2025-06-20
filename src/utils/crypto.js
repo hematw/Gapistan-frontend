@@ -29,7 +29,6 @@ export async function importPublicKey(jwk) {
   );
 }
 
-// Derive AES-GCM key from your privateKey + their publicKey
 export async function deriveSharedAESKey(privateKey, otherPublicKey) {
   return await crypto.subtle.deriveKey(
     {
@@ -48,7 +47,7 @@ export async function deriveSharedAESKey(privateKey, otherPublicKey) {
 
 export async function encryptMessage(aesKey, plaintext) {
   const encoder = new TextEncoder();
-  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV
+  const iv = crypto.getRandomValues(new Uint8Array(12));
   const ciphertext = await crypto.subtle.encrypt(
     {
       name: "AES-GCM",
@@ -107,13 +106,11 @@ export async function generateAndSaveRSAKeys() {
     ["encrypt", "decrypt"]
   );
 
-  // Export public key to send to server
   const publicKeyJwk = await window.crypto.subtle.exportKey(
     "jwk",
     keyPair.publicKey
   );
 
-  // Export private key to store securely (e.g., IndexedDB or localStorage encrypted)
   const privateKeyJwk = await window.crypto.subtle.exportKey(
     "jwk",
     keyPair.privateKey
@@ -129,38 +126,34 @@ export async function generateAndSaveRSAKeys() {
 }
 
 export async function decryptGroupAESKey(encryptedKeyBase64) {
-  const jwkPrivateKey = await getRsaPrivateKey(); // your JWK object
+  const jwkPrivateKey = await getRsaPrivateKey();
 
   if (!jwkPrivateKey) throw new Error("No private key found");
 
-  // 🔑 Step 1: Import JWK into CryptoKey
   const privateKey = await crypto.subtle.importKey(
     "jwk",
     jwkPrivateKey,
     {
       name: "RSA-OAEP",
-      hash: "SHA-256", // match your key's alg "RSA-OAEP-256"
+      hash: "SHA-256",
     },
     true,
     ["decrypt"]
   );
 
-  // 🔒 Step 2: Convert base64 string into Uint8Array buffer
   const encryptedBuffer = Uint8Array.from(
     atob(encryptedKeyBase64),
     (c) => c.charCodeAt(0)
   );
 
-  // 🔓 Step 3: Decrypt the group AES key using RSA
   const aesKeyRaw = await window.crypto.subtle.decrypt(
     {
       name: "RSA-OAEP",
     },
-    privateKey, // now it's a proper CryptoKey
+    privateKey,
     encryptedBuffer
   );
 
-  // 🔁 Step 4: Import decrypted AES key
   const aesKey = await crypto.subtle.importKey(
     "raw",
     aesKeyRaw,

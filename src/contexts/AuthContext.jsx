@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
 import { storePrivateKey, deletePrivateKey } from "@/services/keyManager";
 import { generateAndSaveRSAKeys } from "../utils/crypto";
+import { getPrivateKey, getRsaPrivateKey } from "../services/keyManager";
 
 async function setupKeysAndSendToServer() {
   const keyPair = await generateECDHKeyPair();
@@ -50,16 +51,25 @@ export default function AuthProvider({ children }) {
 
   async function signIn(values) {
     try {
-      const { data } = await axios.post(import.meta.env.VITE_API_URL+"/auth/signin", values);
+      const { data } = await axios.post(
+        import.meta.env.VITE_API_URL + "/auth/signin",
+        values
+      );
       console.log(data);
       setUser(data.user);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      await setupKeysAndSendToServer();
-      // generate and save RSA Key used for group keys
-      await generateAndSaveRSAKeys()
+      const aesKey = await getPrivateKey();
+      const rsaKey = await getRsaPrivateKey();
 
+      if (!aesKey) {
+        await setupKeysAndSendToServer();
+      }
+
+      if (!rsaKey) {
+        await generateAndSaveRSAKeys();
+      }
       addToast({
         title: "Success",
         description: "Login successful!",

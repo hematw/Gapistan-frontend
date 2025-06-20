@@ -1,5 +1,7 @@
 import { lazy } from "react";
 import VerifyOtp from "./pages/VerifyOtp";
+import About from "./pages/About";
+import Features from "./pages/Features";
 
 const Chat = lazy(() => import("./pages/Chat"));
 const SignIn = lazy(() => import("./pages/SignIn"));
@@ -29,6 +31,14 @@ const router = [
   {
     path: "/signup",
     element: <SignUp />,
+  },
+    {
+    path: "/about",
+    element: <About />,
+  },
+  {
+    path: "/features",
+    element: <Features />,
   },
   {
     path: "/verify-otp",

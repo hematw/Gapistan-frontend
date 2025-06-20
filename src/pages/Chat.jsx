@@ -159,13 +159,15 @@ function Chat() {
         console.error("Group chat key not found");
       }
     } else {
-      // === Encrypt text if present ===}
       if (!isTextEmpty && privateKey && selectedChat) {
         let otherUser;
         try {
-          if (!selectedChat.isGroup) {
+          if (selectedChat.members) {
             otherUser = selectedChat.members.find((m) => m._id !== user._id);
+          } else {
+            otherUser = selectedUser;
           }
+
           const otherPubKey = await getOtherUserPublicKey(
             selectedChat?._id,
             selectedUser?._id || otherUser?._id
@@ -279,16 +281,22 @@ function Chat() {
               throw new Error("Group AES key not loaded yet");
             }
           } else {
-            const otherUser = selectedChat.members.find(
-              (m) => m._id !== user._id
-            );
+            let otherUser;
+            if (selectedChat.members) {
+              otherUser = selectedChat.members.find(
+                (m) => m._id !== user._id
+              );
+            } else {
+              otherUser = selectedUser;
+            }
+
             const otherPubKey = await getOtherUserPublicKey(
               selectedChat._id,
               otherUser._id
             );
             aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
           }
-          
+
           const iv = new Uint8Array(data.iv);
           decryptedOutgoingText = await decryptMessage(aesKey, data.text, iv);
         } catch (err) {
@@ -419,7 +427,7 @@ function Chat() {
     let isMounted = true;
 
     const setupGroupKey = async () => {
-      if (!selectedChat || groupChatKeys[selectedChat._id]) return;
+      if (!selectedChat?.isGroup || groupChatKeys[selectedChat._id]) return;
       try {
         const { data } = await axiosIns.get(
           `/keys/aes-key/${selectedChat._id}`
@@ -459,10 +467,14 @@ function Chat() {
     async function decryptAndSetTimeline() {
       if (!chatTimeline?.messages || !privateKey || !selectedChat) return;
 
-      // 💡 Wait until group key is available
       if (selectedChat.isGroup && !groupChatKeys[selectedChat._id]) return;
-
-      const receiver = selectedChat.members.find((m) => m._id !== user._id);
+      console.log("Selected Chat", selectedChat);
+      let receiver;
+      if (selectedChat.members) {
+        receiver = selectedChat.members.find((m) => m._id !== user._id);
+      } else {
+        receiver = selectedUser;
+      }
 
       const updatedChatTimeline = { ...chatTimeline };
 
@@ -524,7 +536,7 @@ function Chat() {
   ]);
 
   if ((chatsErr, chatTimelineErr)) {
-    return <p>{chatTimeline.message || chatsErr.message}</p>;
+    return <p>{chatTimeline?.message || chatsErr?.message}</p>;
   }
   if (chatsLoading) {
     return <p className="text-2xl">Loading...</p>;
@@ -561,6 +573,7 @@ function Chat() {
                   <ChatHeader
                     selectedChat={selectedChat}
                     setSelectedChat={setSelectedChat}
+                    setSelectedUser={setSelectedUser}
                   />
                   <ChatTimeline
                     chatEndRef={chatEndRef}

@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 
-function ChatHeader({ selectedChat, setSelectedChat }) {
+function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isEditOpen,
@@ -45,15 +45,15 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
     reset,
   } = useForm({
     defaultValues: {
-      chatName: selectedChat.chatName || "",
-      profile: getFileURL(selectedChat.profile) || null,
+      chatName: selectedChat?.chatName || "",
+      profile: getFileURL(selectedChat?.profile) || null,
     },
   });
 
   useEffect(() => {
     reset({
       chatName: selectedChat.chatName || "",
-      profile: getFileURL(selectedChat.profile) || null,
+      profile: getFileURL(selectedChat?.profile) || null,
     });
   }, [selectedChat, reset]);
 
@@ -116,7 +116,10 @@ function ChatHeader({ selectedChat, setSelectedChat }) {
           startContent={<ArrowLeft />}
           isIconOnly
           variant="fade"
-          onPress={() => setSelectedChat(null)}
+          onPress={() => {
+            setSelectedChat(null)
+            setSelectedUser(null)
+          }}
         />
         <User
           name={selectedChat.chatName}
