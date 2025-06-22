@@ -62,7 +62,7 @@ function Sidebar() {
   const { data: users } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data } = await axiosIns.get("/users");
+      const { data } = await axiosIns.get("/users/for-dropdown");
       return data.users;
     },
   });
@@ -79,7 +79,7 @@ function Sidebar() {
       <div className="rounded-full bg-limegreen w-10 h-10">
         <img src="/logo.png" alt="" className="w-10 h-10" />
       </div>
-      <div className="flex flex-col gap-2">
+      {/* <div className="flex flex-col gap-2">
         <Avatar size="md" name="Conner Garcia" fallback="GG" color="danger" />
         <Avatar
           size="md"
@@ -116,7 +116,7 @@ function Sidebar() {
           color="default"
           className="whitespace-nowrap"
         />
-      </div>
+      </div> */}
       <div className="mt-auto">
         <Dropdown aria-label="dropdown for plus button">
           <DropdownTrigger>
@@ -128,9 +128,9 @@ function Sidebar() {
             />
           </DropdownTrigger>
           <DropdownMenu>
-            <DropdownItem className="p-2" startContent={<CircleFadingPlus />}>
+            {/* <DropdownItem className="p-2" startContent={<CircleFadingPlus />}>
               Add Story
-            </DropdownItem>
+            </DropdownItem> */}
             <DropdownItem
               className="p-2"
               startContent={<Users />}
@@ -138,9 +138,9 @@ function Sidebar() {
             >
               Create Group
             </DropdownItem>
-            <DropdownItem className="p-2" startContent={<UserPlus />}>
+            {/* <DropdownItem className="p-2" startContent={<UserPlus />}>
               New Contact
-            </DropdownItem>
+            </DropdownItem> */}
           </DropdownMenu>
         </Dropdown>
 
