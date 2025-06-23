@@ -7,8 +7,21 @@ import getFileURL from "../utils/setFileURL";
 import { Avatar } from "@heroui/avatar";
 import { Divider } from "@heroui/divider";
 import getTimeAgo from "../utils/getTimeAgo";
+import { useSocket } from "../contexts/SocketContext";
 
 function ChatActions({ selectedChat }) {
+  const { socket } = useSocket();
+  
+  const handleCall = () => {
+    const roomName = `${myUserId}-${targetUserId}-room`;
+
+    socket.emit("start-call", {
+      toUserId: targetUserId,
+      fromUserId: myUserId,
+      roomName,
+    });
+  };
+
   return (
     <Card className="bg-white dark:bg-dark shadow-lg">
       <CardHeader>
@@ -51,6 +64,7 @@ function ChatActions({ selectedChat }) {
             radius="full"
             startContent={<PhoneCall />}
             className="bg-limegreen text-black"
+            onPress={handleCall}
           />
         </Tooltip>
         <Tooltip content="Video Call" placement="top">
