@@ -2,7 +2,7 @@
 import { LiveKitRoom, VideoConference } from "@livekit/components-react";
 import "@livekit/components-styles"; // include LiveKit styles
 import { useState, useEffect } from "react";
-import axiosIns from "../utils/axios";
+import axiosIns from "../../utils/axios";
 import { addToast } from "@heroui/toast";
 
 export default function VideoCall({ userId, roomName }) {

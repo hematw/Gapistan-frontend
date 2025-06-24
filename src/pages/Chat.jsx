@@ -30,6 +30,8 @@ import {
   decryptGroupAESKey,
 } from "../utils/crypto";
 import { getPrivateKey } from "../services/keyManager";
+import { useNavigate } from "react-router-dom";
+import IncomingCallModal from "../components/calls/IncomingCallModal";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -68,10 +70,14 @@ function Chat() {
 
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
+  const navigate = useNavigate();
 
   const [privateKey, setPrivateKey] = useState(null);
   const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
   const [groupChatKeys, setGroupChatKeys] = useState({}); // {chatId: publicKeyJwk}
+  const [incomingCall, setIncomingCall] = useState(null);
+
+
 
   useSeenHandler({
     messagesEndRef: chatEndRef,
@@ -83,6 +89,76 @@ function Chat() {
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (!socket) {
+      console.log("Socket not initialized");
+      return
+    };
+
+    socket.on("incoming-call", ({ fromUserId, roomName }) => {
+      console.log("Incoming call from", fromUserId);
+      setIncomingCall({ fromUserId, roomName });
+    });
+
+    const handleCallAccepted = ({ roomName }) => {
+      console.log('Call accepted! Navigating to room:', roomName);
+      navigate(`/video-call?userId=${user._id}&roomName=${roomName}`);
+    };
+
+    socket.on('call-accepted', handleCallAccepted);
+    
+    const handleRejected = ({ roomName }) => {
+      console.log('Call rejected for room:', roomName);
+      addToast({
+        title: "Call Rejected",
+        description: "The call was rejected.",
+        color: "danger",
+      })
+    };
+
+    socket.on('call-rejected', handleRejected);
+
+    socket.on('call-timeout', ({ roomName }) => {
+      console.log('Call timed out from caller', roomName);
+      setIncomingCall(null); // closes the modal
+    });
+
+    return () => {
+      socket.off("incoming-call");
+      socket.off('call-accepted', handleCallAccepted);
+      socket.off('call-rejected', handleRejected);
+      socket.off('call-timeout');
+    };
+  }, [socket, user._id, navigate]);
+
+  const handleAccept = () => {
+    if (!incomingCall) return;
+
+    // emit accept event to backend
+    socket.emit("accept-call", {
+      toUserId: incomingCall.fromUserId,
+      roomName: incomingCall.roomName,
+    });
+
+    // navigate to the call room
+    navigate(
+      `/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
+    );
+
+    setIncomingCall(null);
+  };
+
+  const handleReject = () => {
+    if (incomingCall) {
+      socket.emit('call-rejected', {
+        toUserId: incomingCall.fromUserId,
+        roomName: incomingCall.roomName,
+      });
+    }
+    setIncomingCall(null);
+  };
+
 
   // On mount, generate ECDH key pair if not present
   useEffect(() => {
@@ -283,9 +359,7 @@ function Chat() {
           } else {
             let otherUser;
             if (selectedChat.members) {
-              otherUser = selectedChat.members.find(
-                (m) => m._id !== user._id
-              );
+              otherUser = selectedChat.members.find((m) => m._id !== user._id);
             } else {
               otherUser = selectedUser;
             }
@@ -556,6 +630,12 @@ function Chat() {
         </div>
 
         <ProfileModal isOpen={isOpen} onOpenChange={onOpenChange} />
+        <IncomingCallModal
+          isOpen={!!incomingCall}
+          callerId={incomingCall?.fromUserId || ""}
+          onAccept={handleAccept}
+          onReject={handleReject}
+        />
 
         <div className="w-screen">
           <div className="flex justify-between items-center mb-4">

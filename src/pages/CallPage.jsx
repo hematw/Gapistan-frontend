@@ -1,5 +1,12 @@
-import VideoCall from "@/components/VideoCall";
+import VideoCall from "@/components/calls/VideoCall";
+import { useLocation, useParams } from "react-router-dom";
 
 export default function CallPage() {
-  return <VideoCall userId="hematullah123" roomName="gapistan-room" />;
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const userId = queryParams.get("userId");
+  const roomName = queryParams.get("roomName");
+
+  
+  return <VideoCall userId={userId} roomName={roomName} />;
 }

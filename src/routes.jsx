@@ -46,7 +46,7 @@ const router = [
     element: <VerifyOtp />,
   },
   {
-    path: "/call",
+    path: "/video-call",
     element: <CallPage />,
   },
 ];
