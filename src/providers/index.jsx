@@ -25,7 +25,7 @@ function Providers({ children }) {
             <ToastProvider
               placement="top-center"
               toastProps={{
-                variant: "flat",
+                variant: "solid",
                 timeout: "3000",
               }}
             />

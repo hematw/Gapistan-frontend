@@ -2,6 +2,7 @@ import { lazy } from "react";
 import VerifyOtp from "./pages/VerifyOtp";
 import About from "./pages/About";
 import Features from "./pages/Features";
+import CallPage from "./pages/CallPage";
 
 const Chat = lazy(() => import("./pages/Chat"));
 const SignIn = lazy(() => import("./pages/SignIn"));
@@ -43,6 +44,10 @@ const router = [
   {
     path: "/verify-otp",
     element: <VerifyOtp />,
+  },
+  {
+    path: "/video-call",
+    element: <CallPage />,
   },
 ];
 

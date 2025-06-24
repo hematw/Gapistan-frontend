@@ -51,7 +51,7 @@ const Home = () => {
                   name={user.firstName + " " + user.lastName}
                   avatarProps={{
                     src: getFileURL(user.profile),
-                    fallback: user.firstName[0].toUpperCase(),
+                    fallback: user.firstName?.[0].toUpperCase(),
                   }}
                 />
               </>
