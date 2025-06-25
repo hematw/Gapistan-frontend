@@ -56,7 +56,7 @@ export default function IncomingCallModal({
                     isIconOnly
                     radius="full"
                     startContent={<PhoneCall />}
-                    onPressk={onAccept}
+                    onPress={onAccept}
                     color="success"
                     size="lg"
                   />

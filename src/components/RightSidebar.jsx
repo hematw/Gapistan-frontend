@@ -6,7 +6,7 @@ const ChatActions = lazy(() => import("./ChatActions"));
 const MemberList = lazy(() => import("./MemberList"));
 const FileSection = lazy(() => import("./FileSection"));
 
-function RightSidebar({ files, selectedChat }) {
+function RightSidebar({ files, selectedChat,handleCall }) {
   console.log(files);
   const { data, isLoading, error } = useQuery({
     queryKey: ["chats", selectedChat?._id, "files"],
@@ -23,7 +23,7 @@ function RightSidebar({ files, selectedChat }) {
 
   return (
     <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto hidden lg:block max-h-full">
-      <ChatActions selectedChat={selectedChat} />
+      <ChatActions selectedChat={selectedChat} handleCall={handleCall} />
 
       {selectedChat.isGroup && <MemberList selectedChat={selectedChat} />}
 
