@@ -91,6 +91,12 @@ export function useCallHandler({ socket, selectedChat }) {
       clearTimeout(callTimeoutId);
       setIncomingCall(null);
       setIsCalling(false);
+      setCallTimeoutId(null);
+      addToast({
+        title: "Call Cancelled",
+        description: "You have cancelled the call.",
+        color: "info",
+      });
 
       socket.emit("call-timeout", {
         toUserId: targetUser._id,
@@ -111,6 +117,8 @@ export function useCallHandler({ socket, selectedChat }) {
       `/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
     );
     setIncomingCall(null);
+    setCallTimeoutId(null);
+    setIsCalling(false);
   };
 
   const rejectCall = () => {
@@ -120,7 +128,16 @@ export function useCallHandler({ socket, selectedChat }) {
         roomName: incomingCall.roomName,
       });
     }
+
+    addToast({
+      title: "Call Rejected",
+      description: "You have rejected the call.",
+      color: "danger",
+    });
+    
     setIncomingCall(null);
+    setCallTimeoutId(null);
+    setIsCalling(false);
   };
 
   return {
