@@ -29,6 +29,8 @@ export function useCallHandler({ socket, selectedChat }) {
     const handleCallRejected = () => {
       setIncomingCall(null);
       setIsCalling(false);
+      clearTimeout(callTimeoutId);
+      setCallTimeoutId(null);
       addToast({
         title: "Call Rejected",
         description: "The call was rejected.",
@@ -38,6 +40,8 @@ export function useCallHandler({ socket, selectedChat }) {
 
     const handleCallTimeout = () => {
       setIsCalling(false);
+      clearTimeout(callTimeoutId);
+      setCallTimeoutId(null);
       setIncomingCall(null);
     };
 
@@ -82,7 +86,7 @@ export function useCallHandler({ socket, selectedChat }) {
         toUserId: targetUser._id,
         roomName,
       });
-    }, 20000);
+    }, 30000);
 
     setCallTimeoutId(timeoutId);
   }, [myUser, selectedChat, socket, targetUser]);
@@ -92,6 +96,7 @@ export function useCallHandler({ socket, selectedChat }) {
       clearTimeout(callTimeoutId);
       setIncomingCall(null);
       setIsCalling(false);
+      clearTimeout(callTimeoutId);
       setCallTimeoutId(null);
       addToast({
         title: "Call Cancelled",
@@ -130,6 +135,8 @@ export function useCallHandler({ socket, selectedChat }) {
       });
     }
 
+    clearTimeout(callTimeoutId);
+    setCallTimeoutId(null);
     addToast({
       title: "Call Rejected",
       description: "You have rejected the call.",

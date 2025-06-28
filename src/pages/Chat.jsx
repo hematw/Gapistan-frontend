@@ -290,7 +290,7 @@ function Chat() {
     handleTypingEvent(false);
     setReplyToMessage(null);
     setFiles([]);
-  }, [socket]);
+  }, [socket, user, selectedChat, selectedUser, replyToMessage, chatPublicKeys]);
 
   const handleSocketResponse = async ({ message, error, data }) => {
     console.log(message, error, data);
@@ -406,7 +406,7 @@ function Chat() {
     });
 
     setFiles(selectedFiles);
-  }, []);
+  }, [files]);
 
   const handleRemoveFile = useCallback((index) => {
     setFiles((prevFiles) => {
@@ -414,7 +414,7 @@ function Chat() {
       newFiles.splice(index, 1);
       return newFiles;
     });
-  }, []);
+  }, [files]);
 
   const handleTypingEvent = (isTyping) => {
     if (socket && selectedChat) {
