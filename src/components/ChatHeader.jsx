@@ -5,10 +5,11 @@ import {
   EllipsisVertical,
   LogOut,
   Pen,
+  PhoneCall,
   SquarePen,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 import { useDisclosure } from "@heroui/use-disclosure";
 import {
   Dropdown,
@@ -21,8 +22,14 @@ import { Input } from "@heroui/input";
 import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
+import { Tooltip } from "@heroui/tooltip";
 
-function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
+function ChatHeader({
+  selectedChat,
+  setSelectedChat,
+  setSelectedUser,
+  handleCall,
+}) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isEditOpen,
@@ -111,19 +118,19 @@ function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
 
   return (
     <div className="flex items-center justify-between p-2 border-b border-default-200">
-      <div>
+      <div className="flex items-center gap-2">
         <Button
           startContent={<ArrowLeft />}
           isIconOnly
           variant="fade"
           onPress={() => {
-            setSelectedChat(null)
-            setSelectedUser(null)
+            setSelectedChat(null);
+            setSelectedUser(null);
           }}
         />
         <User
           name={selectedChat.chatName}
-          description={`@${selectedChat.username}`}
+          description={!!selectedChat.username && `@${selectedChat.username}`}
           avatarProps={{
             src: selectedChat.profile ? getFileURL(selectedChat.profile) : "",
             fallback: selectedChat?.chatName[0],
@@ -134,6 +141,15 @@ function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
         />
       </div>
 
+        <Tooltip content="Call" placement="top">
+          <Button
+            isIconOnly
+            radius="full"
+            startContent={<PhoneCall />}
+            className="bg-limegreen text-black ml-auto"
+            onPress={handleCall}
+          />
+        </Tooltip>
       {selectedChat.isGroup && (
         <>
           <Dropdown aria-label="Dropdown for chat options">
@@ -161,8 +177,7 @@ function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
                 Leave Group
               </DropdownItem>
             </DropdownMenu>
-          </Dropdown>
-
+          </Dropdown>{" "}
           {/* Leave Group Modal */}
           <CustomModal
             isOpen={isOpen}
@@ -174,7 +189,6 @@ function ChatHeader({ selectedChat, setSelectedChat, setSelectedUser }) {
               onClose();
             }}
           />
-
           {/* Edit Group Modal */}
           <CustomModal
             isOpen={isEditOpen}

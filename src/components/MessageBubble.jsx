@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Avatar } from "@heroui/avatar";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 import {
   File as FileIcon,
   X,
@@ -8,11 +8,13 @@ import {
   ExternalLink,
   Check,
   CheckCheck,
+  ReplyIcon,
 } from "lucide-react";
 import { Modal, ModalContent, ModalBody, ModalFooter } from "@heroui/modal";
 import { Button } from "@heroui/button";
+import getSenderName from "../utils/getSenderName";
 
-function MessageBubble({ message }) {
+function MessageBubble({ message, onReply }) {
   const [previewMedia, setPreviewMedia] = useState(null); // { type: 'image' | 'video', url: string }
 
   const isYou = message.isYou;
@@ -109,40 +111,85 @@ function MessageBubble({ message }) {
             className="w-6 h-6"
           />
           <div className="flex items-center text-nowrap">
-            <span className="font-medium text-xs">
-              {message.sender.firstName
-                ? `${message.sender.firstName} ${message.sender.lastName}`
-                : message.sender.username}
+            <span className="font-semibold text-xs">
+              {getSenderName(message)}
             </span>
           </div>
         </div>
 
-        {message.decryptedText && <p className="mt-1">{message.decryptedText}</p>}
+        {message.replyTo && (
+          <div
+            className={`mb-2 rounded-md px-3 py-2 text-xs ${
+              isYou ? "bg-lime-100" : "bg-gray-200 dark:bg-dark-3"
+            } border-l-4 ${
+              isYou ? "border-lime-500" : "border-gray-400 dark:border-gray-500"
+            }`}
+          >
+            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+              {getSenderName(message.replyTo)}
+            </p>
+
+            {message.replyTo.decryptedText ? (
+              <p className="truncate text-gray-600 dark:text-gray-300">
+                {message.replyTo.decryptedText}
+              </p>
+            ) : message.replyTo.files?.length > 0 ? (
+              <p className="italic text-gray-500">📎 File Attachment</p>
+            ) : (
+              <p className="italic text-gray-400">Unknown message</p>
+            )}
+          </div>
+        )}
+
+        {message.decryptedText && (
+          <p className="mt-1">
+            {message.decryptedText.startsWith("http") ? (
+              <a
+                href={message.decryptedText}
+                className="text-sky-600 hover:underline"
+              >
+                {message.decryptedText}
+              </a>
+            ) : (
+              message.decryptedText
+            )}
+          </p>
+        )}
 
         {Array.isArray(message.files) && message.files.length > 0 && (
           <div className="flex flex-col gap-2 mt-2">
             {message.files.map((file, index) => renderFile(file, index))}
           </div>
         )}
-        {message.isYou && (
-          <p className="text-xs flex items-center">
-            <span>
-              {message.status === "seen" ? (
-                <CheckCheck size={20} color="#018dff" />
-              ) : message.status === "delivered" ? (
-                <CheckCheck size={20} />
-              ) : (
-                <Check size={20} />
-              )}
-            </span>
+        <div className="flex items-center justify-between">
+          <div className="text-xs flex items-center">
+            {message.isYou && (
+              <span>
+                {message.status === "seen" ? (
+                  <CheckCheck size={20} color="#018dff" />
+                ) : message.status === "delivered" ? (
+                  <CheckCheck size={20} />
+                ) : (
+                  <Check size={20} />
+                )}
+              </span>
+            )}
             <span className="ml-2 text-gray-500 text-xs">
               {new Date(message.createdAt).toLocaleTimeString([], {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
             </span>
-          </p>
-        )}
+          </div>
+          <Button
+            startContent={<ReplyIcon size={18} />}
+            size="sm"
+            isIconOnly
+            variant="light"
+            onPress={onReply}
+            className="h-6 w-6 ml-1"
+          />
+        </div>
       </div>
 
       <Modal

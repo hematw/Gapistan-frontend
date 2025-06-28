@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import React, { lazy, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 
@@ -32,4 +32,4 @@ function RightSidebar({ files, selectedChat,handleCall }) {
   );
 }
 
-export default RightSidebar;
+export default memo(RightSidebar);

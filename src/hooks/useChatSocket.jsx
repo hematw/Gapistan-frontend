@@ -4,6 +4,7 @@ const useChatSocket = ({
   socket,
   user,
   selectedChat,
+  setSelectedChat,
   chatTimeline,
   queryClient,
   playSound,
@@ -12,11 +13,14 @@ const useChatSocket = ({
 }) => {
   useEffect(() => {
     if (!socket) return;
-
     socket.emit("user-online", {
       userId: user._id,
       isOnline: true,
     });
+  }, [socket?.connected, user?._id]);
+
+  useEffect(() => {
+    if (!socket) return;
 
     const handleMessageReceived = (data) => {
       const messageId = data?._id;
@@ -164,6 +168,9 @@ const useChatSocket = ({
           total: prev.total + 1,
         };
       });
+      if (chat.senderId === user._id) {
+        setSelectedChat(chat);
+      }
     };
 
     const handleGroupEvent = (data) => {
@@ -245,9 +252,11 @@ const useChatSocket = ({
     socket.onAny(handleAnyEvent);
 
     return () => {
+      socket.off("messages-delivered", handleMessageDelivery);
       socket.off("message-received", handleMessageReceived);
       socket.off("update-status", handleStatusUpdate);
       socket.off("typing", handleTyping);
+      socket.off("new-chat", handleNewChat);
       socket.off("group-event", handleGroupEvent);
       socket.offAny(handleAnyEvent);
     };

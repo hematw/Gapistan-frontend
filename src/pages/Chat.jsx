@@ -2,7 +2,7 @@ import { Button } from "@heroui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, X } from "lucide-react";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,6 +33,7 @@ import { getPrivateKey } from "../services/keyManager";
 import CallingModal from "../components/calls/CallingModal";
 import IncomingCallModal from "../components/calls/IncomingCallModal";
 import { useCallHandler } from "../hooks/useCallHandler";
+import getSenderName from "../utils/getSenderName";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -69,12 +70,15 @@ function Chat() {
     enabled: !!selectedChat?._id,
   });
 
+  console.log("chat component re-rendered");
+
   const chatEndRef = useRef(null);
   const fileRef = useRef(null);
 
   const [privateKey, setPrivateKey] = useState(null);
-  const [chatPublicKeys, setChatPublicKeys] = useState({}); // {chatId: publicKeyJwk}
-  const [groupChatKeys, setGroupChatKeys] = useState({}); // {chatId: publicKeyJwk}
+  const [chatPublicKeys, setChatPublicKeys] = useState({});
+  const [groupChatKeys, setGroupChatKeys] = useState({});
+  const [replyToMessage, setReplyToMessage] = useState(null);
 
   const {
     isCalling,
@@ -105,32 +109,40 @@ function Chat() {
       }
     }
     setupKey();
-  }, []);
+  }, [privateKey]);
 
   // Helper: get or fetch other user's public key for this chat
-  const getOtherUserPublicKey = useCallback(
-    async (chatId, receiverId) => {
-      try {
-        if (chatPublicKeys[chatId]) {
-          return await importPublicKey(chatPublicKeys[chatId]);
-        }
-        // Fetch from server (implement endpoint to get user's public key)
-        const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
-        setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
-        return await importPublicKey(data.publicKey);
-      } catch (error) {
-        console.error("Failed to get other user's public key:", error);
-        addToast({
-          title: "Public Key Error",
-          description: "Could not retrieve the other user's public key.",
-          color: "danger",
-        });
+  const getOtherUserPublicKey = useCallback(async (chatId, receiverId) => {
+    try {
+      if (chatPublicKeys[chatId]) {
+        delete chatPublicKeys[receiverId];
+        return await importPublicKey(chatPublicKeys[chatId]);
       }
-    },
-    [chatPublicKeys]
-  );
 
-  const sendMessage = async (formdata) => {
+      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+      if (chatId) {
+        setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
+        // Remove old key if exists
+        delete chatPublicKeys[receiverId];
+      } else {
+        setChatPublicKeys((prev) => ({
+          ...prev,
+          [receiverId]: data.publicKey,
+        }));
+      }
+      return await importPublicKey(data.publicKey);
+    } catch (error) {
+      console.error("Failed to get other user's public key:", error);
+      addToast({
+        title: "Public Key Error",
+        description: "Could not retrieve the other user's public key.",
+        color: "danger",
+      });
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (formdata) => {
+    console.log(socket);
     if (!socket) {
       console.log("Socket not initialized");
       return;
@@ -221,11 +233,13 @@ function Chat() {
       "application/pdf",
     ];
 
+    console.log("repley ", replyToMessage);
     const payload = {
       text: encryptedText,
       iv,
       senderId: user?._id,
       chatId: selectedChat?._id,
+      replyTo: replyToMessage?._id,
       receiverId:
         selectedUser?._id ||
         selectedChat?.members.find((m) => m._id !== user._id)?._id,
@@ -274,8 +288,9 @@ function Chat() {
     socket.emit("send-message", payload, handleSocketResponse);
 
     handleTypingEvent(false);
+    setReplyToMessage(null);
     setFiles([]);
-  };
+  }, [socket]);
 
   const handleSocketResponse = async ({ message, error, data }) => {
     console.log(message, error, data);
@@ -372,7 +387,7 @@ function Chat() {
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = useCallback((e) => {
     const selectedFiles = Array.from(e.target.files).filter((file) => {
       const isImageOrVideo =
         file.type === "application/pdf" ||
@@ -391,15 +406,15 @@ function Chat() {
     });
 
     setFiles(selectedFiles);
-  };
+  }, []);
 
-  const handleRemoveFile = (index) => {
+  const handleRemoveFile = useCallback((index) => {
     setFiles((prevFiles) => {
       const newFiles = Array.from(prevFiles);
       newFiles.splice(index, 1);
       return newFiles;
     });
-  };
+  }, []);
 
   const handleTypingEvent = (isTyping) => {
     if (socket && selectedChat) {
@@ -413,10 +428,10 @@ function Chat() {
     }
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = useCallback((e) => {
     const value = e.target.value;
     handleTypingEvent(value.length > 0);
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -426,6 +441,7 @@ function Chat() {
     socket,
     user,
     selectedChat,
+    setSelectedChat,
     chatTimeline,
     queryClient,
     playSound,
@@ -470,7 +486,7 @@ function Chat() {
     return () => {
       isMounted = false;
     };
-  }, [selectedChat]);
+  }, [groupChatKeys, queryClient, selectedChat]);
 
   // E2EE: Decrypt incoming messages
   useEffect(() => {
@@ -539,10 +555,11 @@ function Chat() {
     chatTimeline,
     privateKey,
     selectedChat,
-    groupChatKeys, // 💡 Depend on this!
+    groupChatKeys,
     queryClient,
     user._id,
     getOtherUserPublicKey,
+    selectedUser,
   ]);
 
   if ((chatsErr, chatTimelineErr)) {
@@ -597,14 +614,34 @@ function Chat() {
                     selectedChat={selectedChat}
                     setSelectedChat={setSelectedChat}
                     setSelectedUser={setSelectedUser}
+                    handleCall={handleCall}
                   />
                   <ChatTimeline
                     chatEndRef={chatEndRef}
                     chatTimeline={chatTimeline}
                     chatTimelineLoading={chatTimelineLoading}
+                    onReply={setReplyToMessage}
                   />
 
                   <div className="p-4 border-t relative">
+                    {replyToMessage && (
+                      <div className="bg-gray-100 dark:bg-dark-2 p-2 rounded-lg mb-2 flex items-center justify-between">
+                        <div className="flex-1 text-default-500">
+                          <p className="text-sm text-lime-800 dark:text-lime-300">
+                            {getSenderName(replyToMessage)}
+                          </p>
+                          <p className="text-default-500">
+                            {replyToMessage.decryptedText}
+                          </p>
+                        </div>
+                        <Button
+                          isIconOnly
+                          onPress={() => setReplyToMessage(null)}
+                          size="sm"
+                          startContent={<X />}
+                        />
+                      </div>
+                    )}
                     {files.length > 0 && (
                       <SelectedFilesDrawer
                         files={files}

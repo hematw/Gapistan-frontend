@@ -3,7 +3,12 @@ import { Spinner } from "@heroui/spinner";
 import ChatEvent from "./ChatEvent";
 import MessageBubble from "./MessageBubble";
 
-function ChatTimeline({ chatTimelineLoading, chatTimeline, chatEndRef }) {
+function ChatTimeline({
+  chatTimelineLoading,
+  chatTimeline,
+  chatEndRef,
+  onReply,
+}) {
   return (
     <div className="flex-1 px-4 pb-6 overflow-y-auto">
       {chatTimelineLoading ? (
@@ -20,7 +25,13 @@ function ChatTimeline({ chatTimelineLoading, chatTimeline, chatEndRef }) {
               if (item.contentType !== "message") {
                 return <ChatEvent event={item} key={index} />;
               } else {
-                return <MessageBubble message={item} key={index} />;
+                return (
+                  <MessageBubble
+                    message={item}
+                    key={index}
+                    onReply={() => onReply(item)}
+                  />
+                );
               }
             })}
           </div>

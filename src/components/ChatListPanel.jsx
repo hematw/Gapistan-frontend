@@ -8,7 +8,7 @@ import { Listbox, ListboxItem, ListboxSection } from "@heroui/listbox";
 import { Input } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
 import { User } from "@heroui/user";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 
 function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
   const [search, setSearch] = useState("");
@@ -80,16 +80,18 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                           onPress={() => {
                             setSelectedChat(chat);
                             setSelectedUser(null);
+                            setSearch("");
                           }}
                         >
-                          <ChatItem
-                            key={index}
-                            chatName={chat.chatName}
-                            isYou={chat.isYou}
-                            unread={chat.unread}
-                            lastMessage={chat.lastMessage}
-                            profile={getFileURL(chat.profile)}
-                            onClick={() => setSelectedChat(chat)}
+                            <User
+                            name={chat.chatName}
+                            description={`@${chat?.username}`}
+                            avatarProps={{
+                              src: getFileURL(chat.profile),
+                              fallback: chat.chatName[0].toUpperCase(),
+                              showFallback: true,
+                              color: "success",
+                            }}
                           />
                         </ListboxItem>
                       ))
@@ -123,6 +125,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                             };
                             setSelectedUser(user);
                             setSelectedChat(newChat);
+                            setSearch("");
                           }}
                         >
                           <User

@@ -2,7 +2,7 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Tooltip } from "@heroui/tooltip";
 import { PhoneCall, Pin, Users, Video } from "lucide-react";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 import { Avatar } from "@heroui/avatar";
 import { Divider } from "@heroui/divider";
 import getTimeAgo from "../utils/getTimeAgo";
@@ -43,7 +43,7 @@ function ChatActions({ selectedChat, handleCall }) {
           </div>
         </div>
       </CardHeader>
-      <CardBody className="flex flex-row justify-between">
+      {/* <CardBody className="flex flex-row justify-between">
         <Tooltip content="Call" placement="top">
           <Button
             isIconOnly
@@ -62,7 +62,7 @@ function ChatActions({ selectedChat, handleCall }) {
         <Tooltip content="Add to group" placement="top">
           <Button isIconOnly radius="full" startContent={<Users />} />
         </Tooltip>
-      </CardBody>
+      </CardBody> */}
     </Card>
   );
 }

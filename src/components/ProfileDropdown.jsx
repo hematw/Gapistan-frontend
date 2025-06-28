@@ -9,7 +9,7 @@ import { Avatar } from "@heroui/avatar";
 import { LogOut, User } from "lucide-react";
 import ThemeSwitch from "./ThemeSwitch";
 import { useAuth } from "../contexts/AuthContext";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 
 function ProfileDropdown({ user, onProfileClick }) {
   const { logout } = useAuth();

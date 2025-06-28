@@ -28,7 +28,7 @@ import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 import { addToast } from "@heroui/toast";
 
 function Sidebar() {

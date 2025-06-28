@@ -8,7 +8,7 @@ import { Input, Textarea } from "@heroui/input";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { AtSign, Mail, Pen, Phone, Text, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),

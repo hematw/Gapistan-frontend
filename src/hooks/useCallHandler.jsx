@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { addToast } from "@heroui/toast";
+import { useCallback } from "react";
 
 export function useCallHandler({ socket, selectedChat }) {
   const { user } = useAuth();
@@ -53,7 +54,7 @@ export function useCallHandler({ socket, selectedChat }) {
     };
   }, [socket, user._id, navigate]);
 
-  const handleCall = () => {
+  const handleCall = useCallback(() => {
     if (!myUser || !targetUser) return;
 
     const roomName = selectedChat.isGroup
@@ -84,9 +85,9 @@ export function useCallHandler({ socket, selectedChat }) {
     }, 20000);
 
     setCallTimeoutId(timeoutId);
-  };
+  }, [myUser, selectedChat, socket, targetUser]);
 
-  const cancelCall = () => {
+  const cancelCall = useCallback(() => {
     if (callTimeoutId) {
       clearTimeout(callTimeoutId);
       setIncomingCall(null);
@@ -103,7 +104,7 @@ export function useCallHandler({ socket, selectedChat }) {
         roomName: `${myUser._id}-${targetUser._id}-room`,
       });
     }
-  };
+  }, [callTimeoutId, myUser, socket, targetUser]);
 
   const acceptCall = () => {
     if (!incomingCall) return;
@@ -134,7 +135,7 @@ export function useCallHandler({ socket, selectedChat }) {
       description: "You have rejected the call.",
       color: "danger",
     });
-    
+
     setIncomingCall(null);
     setCallTimeoutId(null);
     setIsCalling(false);

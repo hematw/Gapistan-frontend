@@ -12,7 +12,7 @@ import { Button } from "@heroui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { User as LoggedInUser } from "@heroui/user";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 
 const Home = () => {
   const navigate = useNavigate();

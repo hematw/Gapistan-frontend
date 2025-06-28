@@ -3,7 +3,7 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { User } from "@heroui/user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
-import getFileURL from "../utils/setFileURL";
+import getFileURL from "../utils/getFileURL";
 import { useAuth } from "../contexts/AuthContext";
 import { CircleCheck, Search, UserPlus } from "lucide-react";
 import { Button } from "@heroui/button";
