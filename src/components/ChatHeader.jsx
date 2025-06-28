@@ -6,6 +6,7 @@ import {
   LogOut,
   Pen,
   PhoneCall,
+  ScrollText,
   SquarePen,
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -23,6 +24,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import { Tooltip } from "@heroui/tooltip";
+import { useAuth } from "../contexts/AuthContext";
 
 function ChatHeader({
   selectedChat,
@@ -36,6 +38,12 @@ function ChatHeader({
     onOpen: onEditOpen,
     onClose: onEditClose,
   } = useDisclosure();
+  const {
+    isOpen: isReportOpen,
+    onOpen: onReportOpen,
+    onClose: onReportClose,
+  } = useDisclosure();
+  const { user } = useAuth();
 
   const queryClient = useQueryClient();
   const fileInputRef = useRef();
@@ -44,6 +52,7 @@ function ChatHeader({
     return getFileURL(selectedChat.profile) || null;
   });
 
+  // For editing group
   const {
     register,
     handleSubmit,
@@ -57,12 +66,30 @@ function ChatHeader({
     },
   });
 
+  // For reporting user
+  const {
+    register: registerReport,
+    handleSubmit: handleReportSubmit,
+    formState: { errors: reportErrors },
+    reset: resetReport,
+  } = useForm({
+    defaultValues: {
+      reason: "",
+    },
+  });
+
   useEffect(() => {
     reset({
       chatName: selectedChat.chatName || "",
       profile: getFileURL(selectedChat?.profile) || null,
     });
   }, [selectedChat, reset]);
+
+  useEffect(() => {
+    if (!isReportOpen) {
+      resetReport({ reason: "" });
+    }
+  }, [isReportOpen, resetReport]);
 
   const editMutation = useMutation({
     mutationFn: async (data) => {
@@ -98,6 +125,22 @@ function ChatHeader({
     },
   });
 
+  const reportMutation = useMutation({
+    mutationFn: async ({ reportedUser, reason }) => {
+      const { data } = await axiosIns.post("/reports", {
+        reportedUser,
+        reason,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      onReportClose();
+    },
+    onError: (error) => {
+      console.error("Error reporting user:", error);
+    },
+  });
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -112,8 +155,23 @@ function ChatHeader({
     if (formData.profile?.[0]) {
       formPayload.append("profile", formData.profile[0]);
     }
-
     editMutation.mutate(formPayload);
+  });
+
+  // Find the other user in the chat (not me)
+  const getOtherUserId = () => {
+    if (!selectedChat.members) return null;
+    return selectedChat.members.find((m) => m._id !== user._id)?._id;
+  };
+
+  const handleReportUser = handleReportSubmit((data) => {
+    const reportedUser = getOtherUserId();
+    console.log("oooo 🔰🔰🔰")
+    if (!reportedUser) return;
+    reportMutation.mutate({
+      reportedUser,
+      reason: data.reason,
+    });
   });
 
   return (
@@ -140,35 +198,45 @@ function ChatHeader({
           }}
         />
       </div>
-
-        <Tooltip content="Call" placement="top">
+      <Tooltip content="Call" placement="top">
+        <Button
+          isIconOnly
+          radius="full"
+          startContent={<PhoneCall />}
+          className="bg-limegreen text-black ml-auto"
+          onPress={handleCall}
+        />
+      </Tooltip>
+      <Dropdown aria-label="Dropdown for chat options">
+        <DropdownTrigger>
           <Button
+            startContent={<EllipsisVertical />}
+            variant="fade"
             isIconOnly
             radius="full"
-            startContent={<PhoneCall />}
-            className="bg-limegreen text-black ml-auto"
-            onPress={handleCall}
           />
-        </Tooltip>
-      {selectedChat.isGroup && (
-        <>
-          <Dropdown aria-label="Dropdown for chat options">
-            <DropdownTrigger>
-              <Button
-                startContent={<EllipsisVertical />}
-                variant="fade"
-                isIconOnly
-                radius="full"
-              />
-            </DropdownTrigger>
-            <DropdownMenu>
-              <DropdownItem
-                className="p-2"
-                startContent={<SquarePen />}
-                onPress={onEditOpen}
-              >
-                Edit Group
-              </DropdownItem>
+        </DropdownTrigger>
+        <DropdownMenu>
+          {!selectedChat.isGroup && (
+            <DropdownItem
+              className="p-2"
+              startContent={<ScrollText />}
+              onPress={onReportOpen}
+            >
+              Report {selectedChat.isGroup ? "Group" : "User"}
+            </DropdownItem>
+          )}
+          {selectedChat.isGroup && (
+            <>
+              {selectedChat.groupAdmins.some((admin) => admin === user._id) && (
+                <DropdownItem
+                  className="p-2"
+                  startContent={<SquarePen />}
+                  onPress={onEditOpen}
+                >
+                  Edit Group
+                </DropdownItem>
+              )}
               <DropdownItem
                 className="p-2"
                 startContent={<LogOut />}
@@ -176,69 +244,93 @@ function ChatHeader({
               >
                 Leave Group
               </DropdownItem>
-            </DropdownMenu>
-          </Dropdown>{" "}
-          {/* Leave Group Modal */}
-          <CustomModal
-            isOpen={isOpen}
-            onClose={onClose}
-            message={`Are you sure to leave "${selectedChat.chatName}"?`}
-            confirmMessage="Leave Group"
-            onConfirm={() => {
-              leaveMutation.mutate({ chatId: selectedChat._id });
-              onClose();
-            }}
-          />
-          {/* Edit Group Modal */}
-          <CustomModal
-            isOpen={isEditOpen}
-            onClose={onEditClose}
-            confirmMessage={"Save Changes"}
-            onConfirm={handleEditSubmit}
-          >
-            <form
-              onSubmit={handleEditSubmit}
-              className="space-y-4"
-              encType="multipart/form-data"
-            >
-              <div className="relative max-w-fit">
-                <div className="w-24 h-24 rounded-full overflow-hidden border">
-                  <img
-                    src={profilePreview || "/default-avatar.png"}
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  radius="full"
-                  startContent={<Pen />}
-                  onPress={() => fileInputRef.current.click()}
-                  className="absolute top-0 left-0 w-24 h-24 opacity-50"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  {...register("profile")}
-                  onChange={handleImageChange}
-                  className="hidden"
-                  ref={fileInputRef}
-                />
-              </div>
-              <Input
-                {...register("chatName", {
-                  required: "Group name is required",
-                })}
-                label="Group Name"
-                className="w-full"
-                errorMessage={errors?.chatName?.message}
-                isInvalid={!!errors?.chatName}
+            </>
+          )}
+        </DropdownMenu>
+      </Dropdown>
+      {/* Leave Group Modal */}
+      <CustomModal
+        isOpen={isOpen}
+        onClose={onClose}
+        message={`Are you sure to leave "${selectedChat.chatName}"?`}
+        confirmMessage="Leave Group"
+        onConfirm={() => {
+          leaveMutation.mutate({ chatId: selectedChat._id });
+          onClose();
+        }}
+      />
+      {/* Edit Group Modal */}
+      <CustomModal
+        isOpen={isEditOpen}
+        onClose={onEditClose}
+        confirmMessage={"Save Changes"}
+        onConfirm={handleEditSubmit}
+      >
+        <form
+          onSubmit={handleEditSubmit}
+          className="space-y-4"
+          encType="multipart/form-data"
+        >
+          <div className="relative max-w-fit">
+            <div className="w-24 h-24 rounded-full overflow-hidden border">
+              <img
+                src={profilePreview || "/default-avatar.png"}
+                alt="Profile"
+                className="w-full h-full object-cover"
               />
-            </form>
-          </CustomModal>
-        </>
-      )}
+            </div>
+            <Button
+              isIconOnly
+              size="sm"
+              radius="full"
+              startContent={<Pen />}
+              onPress={() => fileInputRef.current.click()}
+              className="absolute top-0 left-0 w-24 h-24 opacity-50"
+            />
+            <input
+              type="file"
+              accept="image/*"
+              {...register("profile")}
+              onChange={handleImageChange}
+              className="hidden"
+              ref={fileInputRef}
+            />
+          </div>
+          <Input
+            {...register("chatName", {
+              required: "Group name is required",
+            })}
+            label="Group Name"
+            className="w-full"
+            errorMessage={errors?.chatName?.message}
+            isInvalid={!!errors?.chatName}
+          />
+        </form>
+      </CustomModal>
+      {/* Report User Modal */}
+      <CustomModal
+        isOpen={isReportOpen}
+        onClose={onReportClose}
+        confirmMessage="Report"
+        onConfirm={handleReportUser}
+      >
+        <form onSubmit={handleReportUser} className="space-y-4">
+          <Input
+            {...registerReport("reason", {
+              required: "Reason is required",
+              minLength: {
+                value: 5,
+                message: "Reason must be at least 5 characters",
+              },
+            })}
+            label="Reason for reporting"
+            className="w-full"
+            errorMessage={reportErrors?.reason?.message}
+            isInvalid={!!reportErrors?.reason}
+            autoFocus
+          />
+        </form>
+      </CustomModal>
     </div>
   );
 }

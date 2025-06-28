@@ -94,7 +94,7 @@ export async function loadPrivateKeyFromLocal() {
   );
 }
 
-export async function generateAndSaveRSAKeys() {
+export async function generateAndSaveRSAKeys(userId) {
   const keyPair = await window.crypto.subtle.generateKey(
     {
       name: "RSA-OAEP",
@@ -116,7 +116,7 @@ export async function generateAndSaveRSAKeys() {
     keyPair.privateKey
   );
 
-  storeRsaPrivateKey(privateKeyJwk);
+  storeRsaPrivateKey(userId, privateKeyJwk);
 
   await axiosIns.put("/users/rsa-public-key", {
     rsaPublicKey: publicKeyJwk,
@@ -125,8 +125,8 @@ export async function generateAndSaveRSAKeys() {
   return { publicKey: publicKeyJwk, privateKey: privateKeyJwk };
 }
 
-export async function decryptGroupAESKey(encryptedKeyBase64) {
-  const jwkPrivateKey = await getRsaPrivateKey();
+export async function decryptGroupAESKey(userId, encryptedKeyBase64) {
+  const jwkPrivateKey = await getRsaPrivateKey(userId);
 
   if (!jwkPrivateKey) throw new Error("No private key found");
 

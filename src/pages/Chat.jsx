@@ -104,7 +104,7 @@ function Chat() {
   useEffect(() => {
     async function setupKey() {
       if (!privateKey) {
-        const key = await getPrivateKey();
+        const key = await getPrivateKey(user._id);
         setPrivateKey(key);
       }
     }
@@ -141,156 +141,162 @@ function Chat() {
     }
   }, []);
 
-  const sendMessage = useCallback(async (formdata) => {
-    console.log(socket);
-    if (!socket) {
-      console.log("Socket not initialized");
-      return;
-    }
-
-    const rawText = formdata.get("text");
-    const text = rawText ? rawText.trim() : "";
-    const file = formdata.get("files");
-
-    // === Validate empty submission ===
-    const isTextEmpty = text === "";
-    const isFileEmpty = !file || file.size === 0;
-
-    if (isTextEmpty && isFileEmpty) {
-      return addToast({
-        title: "Empty Message",
-        description: "Cannot send an empty message without text or file",
-        color: "danger",
-      });
-    }
-
-    let encryptedText = null;
-    let iv = null;
-
-    if (selectedChat?.isGroup) {
-      console.log("this is a group chat");
-      const groupChatKey = groupChatKeys[selectedChat._id];
-      if (groupChatKey) {
-        const { ciphertext, iv: textIv } = await encryptMessage(
-          groupChatKey,
-          text
-        );
-        encryptedText = btoa(
-          String.fromCharCode(...new Uint8Array(ciphertext))
-        );
-        iv = Array.from(textIv);
-      } else {
-        console.error("Group chat key not found");
+  const sendMessage = useCallback(
+    async (formdata) => {
+      console.log(socket);
+      if (!socket) {
+        console.log("Socket not initialized");
+        return;
       }
-    } else {
-      if (!isTextEmpty && privateKey && selectedChat) {
-        let otherUser;
-        try {
-          if (selectedChat.members) {
-            otherUser = selectedChat.members.find((m) => m._id !== user._id);
-          } else {
-            otherUser = selectedUser;
-          }
 
-          const otherPubKey = await getOtherUserPublicKey(
-            selectedChat?._id,
-            selectedUser?._id || otherUser?._id
+      const rawText = formdata.get("text");
+      const text = rawText ? rawText.trim() : "";
+      const file = formdata.get("files");
+
+      // === Validate empty submission ===
+      const isTextEmpty = text === "";
+      const isFileEmpty = !file || file.size === 0;
+
+      if (isTextEmpty && isFileEmpty) {
+        return addToast({
+          title: "Empty Message",
+          description: "Cannot send an empty message without text or file",
+          color: "danger",
+        });
+      }
+
+      let encryptedText = null;
+      let iv = null;
+
+      if (selectedChat?.isGroup) {
+        console.log("this is a group chat");
+        const groupChatKey = groupChatKeys[selectedChat._id];
+        if (groupChatKey) {
+          const { ciphertext, iv: textIv } = await encryptMessage(
+            groupChatKey,
+            text
           );
-
-          const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
-
-          console.log("Aes key", aesKey);
-          const { ciphertext, iv: textIv } = await encryptMessage(aesKey, text);
-          if (!ciphertext || ciphertext.byteLength === 0) {
-            throw new Error("Encryption returned empty ciphertext");
-          }
-
           encryptedText = btoa(
             String.fromCharCode(...new Uint8Array(ciphertext))
           );
+          iv = Array.from(textIv);
+        } else {
+          console.error("Group chat key not found");
+        }
+      } else {
+        if (!isTextEmpty && privateKey && selectedChat) {
+          let otherUser;
+          try {
+            if (selectedChat.members) {
+              otherUser = selectedChat.members.find((m) => m._id !== user._id);
+            } else {
+              otherUser = selectedUser;
+            }
 
-          iv = Array.from(textIv); // Convert to array for socket transport
-        } catch (error) {
-          console.error("Encryption failed:", error);
+            const otherPubKey = await getOtherUserPublicKey(
+              selectedChat?._id,
+              selectedUser?._id || otherUser?._id
+            );
+
+            const aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
+
+            console.log("Aes key", aesKey);
+            const { ciphertext, iv: textIv } = await encryptMessage(
+              aesKey,
+              text
+            );
+            if (!ciphertext || ciphertext.byteLength === 0) {
+              throw new Error("Encryption returned empty ciphertext");
+            }
+
+            encryptedText = btoa(
+              String.fromCharCode(...new Uint8Array(ciphertext))
+            );
+
+            iv = Array.from(textIv); // Convert to array for socket transport
+          } catch (error) {
+            console.error("Encryption failed:", error);
+            return addToast({
+              title: "Encryption Error",
+              description: "Could not encrypt message.",
+              color: "danger",
+            });
+          }
+        }
+      }
+
+      // === File Validation ===
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const allowedTypes = [
+        "audio/mpeg",
+        "audio/webm",
+        "video/webm",
+        "video/mp4",
+        "image/png",
+        "image/jpeg",
+        "application/pdf",
+      ];
+
+      console.log("repley ", replyToMessage);
+      const payload = {
+        text: encryptedText,
+        iv,
+        senderId: user?._id,
+        chatId: selectedChat?._id,
+        replyTo: replyToMessage?._id,
+        receiverId:
+          selectedUser?._id ||
+          selectedChat?.members.find((m) => m._id !== user._id)?._id,
+      };
+
+      if (!isFileEmpty) {
+        if (!allowedTypes.includes(file.type)) {
           return addToast({
-            title: "Encryption Error",
-            description: "Could not encrypt message.",
+            title: "Unsupported file type",
+            description:
+              "Only MP3, WebM, PNG, MP4, PDF and JPEG files are allowed.",
+            color: "danger",
+          });
+        }
+
+        if (file.size > maxSize) {
+          return addToast({
+            title: "File too large",
+            description: "Maximum file size is 5MB.",
+            color: "danger",
+          });
+        }
+
+        try {
+          const { data: uploadRes } = await axiosIns.post(
+            `/chats/${selectedChat?._id}/upload?receiver=${selectedUser?._id}`,
+            formdata,
+            {
+              headers: { "Content-Type": "multipart/form-data" },
+            }
+          );
+
+          payload.files = uploadRes.files || [];
+        } catch (err) {
+          console.error("File upload failed:", err);
+          return addToast({
+            title: "Upload failed",
+            description: "Could not upload file. Try again later.",
             color: "danger",
           });
         }
       }
-    }
 
-    // === File Validation ===
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    const allowedTypes = [
-      "audio/mpeg",
-      "audio/webm",
-      "video/webm",
-      "video/mp4",
-      "image/png",
-      "image/jpeg",
-      "application/pdf",
-    ];
+      // === Final Emit ===
+      console.log("Sending message payload:", payload);
+      socket.emit("send-message", payload, handleSocketResponse);
 
-    console.log("repley ", replyToMessage);
-    const payload = {
-      text: encryptedText,
-      iv,
-      senderId: user?._id,
-      chatId: selectedChat?._id,
-      replyTo: replyToMessage?._id,
-      receiverId:
-        selectedUser?._id ||
-        selectedChat?.members.find((m) => m._id !== user._id)?._id,
-    };
-
-    if (!isFileEmpty) {
-      if (!allowedTypes.includes(file.type)) {
-        return addToast({
-          title: "Unsupported file type",
-          description:
-            "Only MP3, WebM, PNG, MP4, PDF and JPEG files are allowed.",
-          color: "danger",
-        });
-      }
-
-      if (file.size > maxSize) {
-        return addToast({
-          title: "File too large",
-          description: "Maximum file size is 5MB.",
-          color: "danger",
-        });
-      }
-
-      try {
-        const { data: uploadRes } = await axiosIns.post(
-          `/chats/${selectedChat?._id}/upload?receiver=${selectedUser?._id}`,
-          formdata,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-
-        payload.files = uploadRes.files || [];
-      } catch (err) {
-        console.error("File upload failed:", err);
-        return addToast({
-          title: "Upload failed",
-          description: "Could not upload file. Try again later.",
-          color: "danger",
-        });
-      }
-    }
-
-    // === Final Emit ===
-    console.log("Sending message payload:", payload);
-    socket.emit("send-message", payload, handleSocketResponse);
-
-    handleTypingEvent(false);
-    setReplyToMessage(null);
-    setFiles([]);
-  }, [socket, user, selectedChat, selectedUser, replyToMessage, chatPublicKeys]);
+      handleTypingEvent(false);
+      setReplyToMessage(null);
+      setFiles([]);
+    },
+    [socket, user, selectedChat, selectedUser, replyToMessage, chatPublicKeys]
+  );
 
   const handleSocketResponse = async ({ message, error, data }) => {
     console.log(message, error, data);
@@ -387,34 +393,40 @@ function Chat() {
     }
   };
 
-  const handleFileChange = useCallback((e) => {
-    const selectedFiles = Array.from(e.target.files).filter((file) => {
-      const isImageOrVideo =
-        file.type === "application/pdf" ||
-        file.type.startsWith("image/") ||
-        file.type.startsWith("audio/") ||
-        file.type.startsWith("video/");
-      if (isImageOrVideo && file.size / 1024 < 1024 * 5) {
-        return true; // 5MB
-      } else {
-        addToast({
-          color: "danger",
-          title: "File size exceeds 5MB or invalid file type",
-        });
-        return false;
-      }
-    });
+  const handleFileChange = useCallback(
+    (e) => {
+      const selectedFiles = Array.from(e.target.files).filter((file) => {
+        const isImageOrVideo =
+          file.type === "application/pdf" ||
+          file.type.startsWith("image/") ||
+          file.type.startsWith("audio/") ||
+          file.type.startsWith("video/");
+        if (isImageOrVideo && file.size / 1024 < 1024 * 5) {
+          return true; // 5MB
+        } else {
+          addToast({
+            color: "danger",
+            title: "File size exceeds 5MB or invalid file type",
+          });
+          return false;
+        }
+      });
 
-    setFiles(selectedFiles);
-  }, [files]);
+      setFiles(selectedFiles);
+    },
+    [files]
+  );
 
-  const handleRemoveFile = useCallback((index) => {
-    setFiles((prevFiles) => {
-      const newFiles = Array.from(prevFiles);
-      newFiles.splice(index, 1);
-      return newFiles;
-    });
-  }, [files]);
+  const handleRemoveFile = useCallback(
+    (index) => {
+      setFiles((prevFiles) => {
+        const newFiles = Array.from(prevFiles);
+        newFiles.splice(index, 1);
+        return newFiles;
+      });
+    },
+    [files]
+  );
 
   const handleTypingEvent = (isTyping) => {
     if (socket && selectedChat) {
@@ -461,7 +473,7 @@ function Chat() {
 
         if (!data?.key) throw new Error("Encrypted key not received");
 
-        const aesCryptoKey = await decryptGroupAESKey(data.key);
+        const aesCryptoKey = await decryptGroupAESKey(user._id, data.key);
 
         if (isMounted) {
           setGroupChatKeys((prevKeys) => ({
@@ -526,17 +538,39 @@ function Chat() {
                     aesKey = await deriveSharedAESKey(privateKey, otherPubKey);
                   }
 
-                  const decrypted = await decryptMessage(
+                  const decryptedText = await decryptMessage(
                     aesKey,
                     msg.text,
                     msg.iv
                   );
-                  return { ...msg, decryptedText: decrypted };
+
+                  let decryptedReplyToText = null;
+                  if (msg.replyTo?.text && msg.replyTo?.iv) {
+                    try {
+                      decryptedReplyToText = await decryptMessage(
+                        aesKey,
+                        msg.replyTo.text,
+                        msg.replyTo.iv
+                      );
+                    } catch (e) {
+                      console.warn("Failed to decrypt replyTo", e);
+                      decryptedReplyToText = "[Reply Decryption Failed]";
+                    }
+                  }
+
+                  return {
+                    ...msg,
+                    decryptedText,
+                    replyTo: msg.replyTo
+                      ? { ...msg.replyTo, decryptedText: decryptedReplyToText }
+                      : undefined,
+                  };
                 } catch (error) {
                   console.error("error decrypting message", error);
                   return { ...msg, decryptedText: "[Decryption Failed]" };
                 }
               }
+
               return msg;
             })
           );

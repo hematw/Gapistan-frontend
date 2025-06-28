@@ -4,7 +4,7 @@ function DashboardSidebar() {
   return (
     <aside className="h-full w-64 bg-white dark:bg-dark border-r flex flex-col py-6 px-4 shadow-lg">
       <div className="mb-8 flex items-center gap-2">
-        <img src="/logo.png" alt="Logo" className="h-8 w-8" />
+        <img src="/logo.png" alt="Logo" className="h-10 w-10" />
         <span className="text-xl font-bold">Gapistan Dashboard</span>
       </div>
       <nav className="flex flex-col gap-2">

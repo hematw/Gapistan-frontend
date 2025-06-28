@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import axiosIns from "../utils/axios";
+import DashboardSidebar from "../components/DashboardSidebar";
+import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
 
 const PAGE_SIZE = 10;
 
@@ -11,14 +14,18 @@ const DashboardUsers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [banning, setBanning] = useState({});
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
 
-  const fetchUsers = async (page) => {
+  const fetchUsers = async (page, search) => {
     setLoading(true);
     setError(null);
     try {
-      const { data } = await axiosIns.get(`/users?page=${page}&limit=${PAGE_SIZE}`);
+      const { data } = await axiosIns.get(
+        `/users?page=${page}&limit=${PAGE_SIZE}${search ? `&search=${encodeURIComponent(search)}` : ""}`
+      );
       setUsers(data.users);
-      setTotalPages(data.totalPages || 1);
+      setTotalPages(Math.ceil(data.total / PAGE_SIZE) || 1);
     } catch (err) {
       setError(err.message || "Failed to fetch users");
     } finally {
@@ -27,27 +34,47 @@ const DashboardUsers = () => {
   };
 
   useEffect(() => {
-    fetchUsers(page);
-  }, [page]);
+    fetchUsers(page, search);
+  }, [page, search]);
 
   const handleBan = async (userId) => {
     setBanning((prev) => ({ ...prev, [userId]: true }));
     try {
-      await axiosIns.post(`/users/${userId}/ban`);
-      setUsers((prev) => prev.map((u) => (u._id === userId ? { ...u, banned: true } : u)));
+      await axiosIns.patch(`/users/${userId}/ban`);
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, isBanned: true } : u))
+      );
     } catch (err) {
-        console.error(err)
+      console.error(err);
       alert("Failed to ban user");
     } finally {
       setBanning((prev) => ({ ...prev, [userId]: false }));
     }
   };
 
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput.trim());
+  };
+
   return (
-    <div className="dashboard">
-      <Sidebar />
-      <div className="users-content p-8 flex-1">
+    <div className="flex h-screen">
+      <DashboardSidebar />
+      <div className="users-content p-8 flex-1 overflow-auto">
         <h1 className="text-2xl font-bold mb-6">Users</h1>
+        <form onSubmit={handleSearchSubmit} className="mb-4 flex gap-2 items-center">
+          <Input
+            type="text"
+            placeholder="Search users..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="border px-3 py-2 rounded w-64"
+          />
+          <Button type="submit" radius="sm">
+            Search
+          </Button>
+        </form>
         {loading ? (
           <p>Loading users...</p>
         ) : error ? (
@@ -69,43 +96,49 @@ const DashboardUsers = () => {
                     <td className="py-2 px-4">{user.name || user.username}</td>
                     <td className="py-2 px-4">{user.email}</td>
                     <td className="py-2 px-4">
-                      {user.banned ? (
-                        <span className="text-red-500 font-semibold">Banned</span>
+                      {user.isBanned ? (
+                        <span className="text-red-500 font-semibold">
+                          Banned
+                        </span>
                       ) : (
                         <span className="text-green-600">Active</span>
                       )}
                     </td>
                     <td className="py-2 px-4">
-                      <button
-                        className="bg-red-500 text-white px-3 py-1 rounded disabled:opacity-50"
+                      <Button
+                        color="danger"
                         disabled={user.banned || banning[user._id]}
-                        onClick={() => handleBan(user._id)}
+                        onPress={() => handleBan(user._id)}
                       >
-                        {banning[user._id] ? "Banning..." : user.banned ? "Banned" : "Ban"}
-                      </button>
+                        {banning[user._id]
+                          ? "Banning..."
+                          : user.banned
+                          ? "Banned"
+                          : "Ban"}
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="flex justify-between items-center mt-4">
-              <button
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              <Button
+                radius="sm"
                 disabled={page === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onPress={() => setPage((p) => Math.max(1, p - 1))}
               >
                 Previous
-              </button>
+              </Button>
               <span>
                 Page {page} of {totalPages}
               </span>
-              <button
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+              <Button
+                radius="sm"
                 disabled={page === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onPress={() => setPage((p) => Math.min(totalPages, p + 1))}
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}

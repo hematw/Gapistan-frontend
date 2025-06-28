@@ -3,6 +3,9 @@ import VerifyOtp from "./pages/VerifyOtp";
 import About from "./pages/About";
 import Features from "./pages/Features";
 import CallPage from "./pages/CallPage";
+import DashboardUsers from "./pages/DashboardUsers";
+import DashboardReports from "./pages/DashboardReports";
+import AdminLayout from "./pages/AdminRoutes";
 
 const Chat = lazy(() => import("./pages/Chat"));
 const SignIn = lazy(() => import("./pages/SignIn"));
@@ -33,7 +36,7 @@ const router = [
     path: "/signup",
     element: <SignUp />,
   },
-    {
+  {
     path: "/about",
     element: <About />,
   },
@@ -48,6 +51,21 @@ const router = [
   {
     path: "/video-call",
     element: <CallPage />,
+  },
+
+  {
+    path: "/dashboard",
+    element: <AdminLayout />,
+    children: [
+      {
+        path: "users",
+        element: <DashboardUsers />,
+      },
+      {
+        path: "reports",
+        element: <DashboardReports />,
+      },
+    ],
   },
 ];
 

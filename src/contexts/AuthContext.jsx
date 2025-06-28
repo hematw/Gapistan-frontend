@@ -10,11 +10,11 @@ import { storePrivateKey, deletePrivateKey } from "@/services/keyManager";
 import { generateAndSaveRSAKeys } from "../utils/crypto";
 import { getPrivateKey, getRsaPrivateKey } from "../services/keyManager";
 
-async function setupKeysAndSendToServer() {
+async function setupKeysAndSendToServer(userId) {
   const keyPair = await generateECDHKeyPair();
   const publicJwk = await exportPublicKey(keyPair.publicKey);
 
-  await storePrivateKey(keyPair.privateKey);
+  await storePrivateKey(userId, keyPair.privateKey);
 
   await axiosIns.put("/users/public-key", { publicKey: publicJwk });
 }
@@ -45,7 +45,7 @@ export default function AuthProvider({ children }) {
     queryClient.clear();
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    await deletePrivateKey();
+    // await deletePrivateKey(user?._id);
     setUser(null);
   }
 
@@ -60,15 +60,15 @@ export default function AuthProvider({ children }) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      const aesKey = await getPrivateKey();
-      const rsaKey = await getRsaPrivateKey();
+      const aesKey = await getPrivateKey(data.user._id);
+      const rsaKey = await getRsaPrivateKey(data.user._id);
 
       if (!aesKey) {
-        await setupKeysAndSendToServer();
+        await setupKeysAndSendToServer(data.user._id);
       }
 
       if (!rsaKey) {
-        await generateAndSaveRSAKeys();
+        await generateAndSaveRSAKeys(data.user._id);
       }
       addToast({
         title: "Success",
