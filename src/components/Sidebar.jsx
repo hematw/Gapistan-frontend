@@ -155,9 +155,11 @@ function Sidebar() {
                         <div className="w-28 h-28 rounded-full overflow-hidden border-2 border-gray-300 dark:border-gray-600">
                           <Avatar
                             fallback={<Image size={36} />}
+                            showFallback={true}
                             src={profilePreview}
                             alt="Profile"
                             className="w-full h-full object-cover"
+                            color="success"
                           />
                         </div>
                         <Button
@@ -209,6 +211,9 @@ function Sidebar() {
                                   className="flex-shrink-0 shadow-sm"
                                   size="sm"
                                   src={getFileURL(item.data.profile)}
+                                  fallback={item.data.firstName?.[0].toUpperCase()}
+                                  showFallback={true}
+                                  color="success"
                                 />
                                 <div className="flex flex-col">
                                   <span className="text-sm font-medium">
@@ -231,6 +236,9 @@ function Sidebar() {
                                 className="flex-shrink-0 shadow-sm"
                                 size="sm"
                                 src={getFileURL(user.profile)}
+                                fallback={user?.firstName?.[0].toUpperCase()}
+                                showFallback={true}
+                                color="success"
                               />
                               <div className="flex flex-col">
                                 <span className="text-sm font-medium">

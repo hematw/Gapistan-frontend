@@ -1,5 +1,5 @@
 import VideoCall from "@/components/calls/VideoCall";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 
 export default function CallPage() {
   const location = useLocation();

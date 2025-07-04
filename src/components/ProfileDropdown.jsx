@@ -26,6 +26,7 @@ function ProfileDropdown({ user, onProfileClick }) {
               ? `${user?.firstName[0]} ${user?.lastName[0]}`
               : `${user?.username[0]}`
           }
+          showFallback={true}
           className="ml-2 min-w-10"
         />
       </DropdownTrigger>

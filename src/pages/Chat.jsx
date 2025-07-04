@@ -695,14 +695,6 @@ function Chat() {
                         {typingMessage.chatName}
                       </div>
                     )}
-
-                    <VoiceRecorder
-                      onSend={(audioBlob) => {
-                        const formData = new FormData();
-                        formData.append("files", audioBlob);
-                        sendMessage(formData);
-                      }}
-                    />
                   </div>
                 </>
               ) : (

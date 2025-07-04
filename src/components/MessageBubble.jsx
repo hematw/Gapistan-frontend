@@ -109,6 +109,9 @@ function MessageBubble({ message, onReply }) {
             size="sm"
             src={getFileURL(message.sender.profile)}
             className="w-6 h-6"
+            fallback={message.sender.firstName?.[0].toUpperCase()}
+            showFallback={true}
+            color="success"
           />
           <div className="flex items-center text-nowrap">
             <span className="font-semibold text-xs">
@@ -119,24 +122,59 @@ function MessageBubble({ message, onReply }) {
 
         {message.replyTo && (
           <div
-            className={`mb-2 rounded-md px-3 py-2 text-xs ${
-              isYou ? "bg-lime-100" : "bg-gray-200 dark:bg-dark-3"
-            } border-l-4 ${
-              isYou ? "border-lime-500" : "border-gray-400 dark:border-gray-500"
+            className={`mb-2 rounded-md px-3 py-2 text-xs
+            ${
+              isYou
+                ? "bg-lime-100 dark:bg-lime-800/20"
+                : "bg-gray-100 dark:bg-zinc-800"
+            } 
+            border-l-4 
+            ${
+              isYou
+                ? "border-lime-500 dark:border-lime-400"
+                : "border-gray-400 dark:border-zinc-600"
             }`}
           >
-            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">
+            <p
+              className={`font-semibold mb-1 ${
+                isYou
+                  ? "text-lime-800 dark:text-slate-700"
+                  : "text-gray-800 dark:text-white"
+              }`}
+            >
               {getSenderName(message.replyTo)}
             </p>
 
             {message.replyTo.decryptedText ? (
-              <p className="truncate text-gray-600 dark:text-gray-300">
+              <p
+                className={`truncate ${
+                  isYou
+                    ? "text-lime-900 dark:text-slate-700"
+                    : "text-gray-700 dark:text-gray-200"
+                }`}
+              >
                 {message.replyTo.decryptedText}
               </p>
             ) : message.replyTo.files?.length > 0 ? (
-              <p className="italic text-gray-500">📎 File Attachment</p>
+              <p
+                className={`italic ${
+                  isYou
+                    ? "text-lime-700 dark:text-lime-300"
+                    : "text-gray-600 dark:text-gray-300"
+                }`}
+              >
+                📎 File Attachment
+              </p>
             ) : (
-              <p className="italic text-gray-400">Unknown message</p>
+              <p
+                className={`italic ${
+                  isYou
+                    ? "text-lime-600 dark:text-lime-400"
+                    : "text-gray-500 dark:text-gray-400"
+                }`}
+              >
+                Unknown message
+              </p>
             )}
           </div>
         )}

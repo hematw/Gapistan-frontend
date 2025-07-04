@@ -49,7 +49,7 @@ function MemberList({ selectedChat }) {
     onSuccess: () => {
       queryClient.invalidateQueries(["chats", selectedChat?._id, "members"]);
       queryClient.invalidateQueries(["chats", selectedChat?._id, "timeline"]);
-      onClose()
+      onClose();
     },
     onError: (error) => {
       console.log(error);
@@ -133,6 +133,9 @@ function MemberList({ selectedChat }) {
                             className="flex-shrink-0 shadow-sm"
                             size="sm"
                             src={getFileURL(user.profile)}
+                            fallback={user?.firstName?.[0].toUpperCase()}
+                            showFallback={true}
+                            color="success"
                           />
                           <div className="flex justify-between items-center w-full">
                             <div>

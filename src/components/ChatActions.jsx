@@ -6,6 +6,7 @@ import getFileURL from "../utils/getFileURL";
 import { Avatar } from "@heroui/avatar";
 import { Divider } from "@heroui/divider";
 import getTimeAgo from "../utils/getTimeAgo";
+import { Badge } from "@heroui/badge";
 
 function ChatActions({ selectedChat, handleCall }) {
   return (
@@ -13,18 +14,26 @@ function ChatActions({ selectedChat, handleCall }) {
       <CardHeader>
         <div className="w-full">
           <div className="flex items-center gap-4 mb-4">
-            <Avatar
-              size="lg"
-              src={getFileURL(selectedChat?.profile)}
-              fallback={selectedChat.chatName[0].toUpperCase()}
-            />
+            <Badge
+              color="success"
+              content=""
+              placement="bottom-right"
+              shape="circle"
+              isInvisible={!selectedChat?.isOnline}
+            >
+              <Avatar
+                size="lg"
+                src={getFileURL(selectedChat?.profile)}
+                fallback={selectedChat.chatName[0].toUpperCase()}
+                showFallback={true}
+                color="success"
+              />
+            </Badge>
             <div>
               <h3 className="font-medium">{selectedChat?.chatName}</h3>
               <p className="flex items-center gap-2 text-default-400 mt-2">
                 {selectedChat?.isOnline ? (
-                  <span>
-                    <span className="text-xs">🟢</span> Online
-                  </span>
+                  <span>Online</span>
                 ) : (
                   <span className="text-xs">
                     <span className="font-semibold text-default-500">

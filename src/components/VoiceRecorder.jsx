@@ -3,7 +3,7 @@ import { Card } from "@heroui/card";
 import { Mic, Send, StopCircle, Trash } from "lucide-react";
 import { useState, useRef } from "react";
 
-const VoiceRecorder = ({ onSend }) => {
+const VoiceRecorder = ({ onSend, setIsRecording: setOnRecord }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [audioData, setAudioData] = useState([]);
@@ -16,6 +16,8 @@ const VoiceRecorder = ({ onSend }) => {
   const streamRef = useRef(null);
 
   const startRecording = async () => {
+    setOnRecord(true);
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -67,51 +69,58 @@ const VoiceRecorder = ({ onSend }) => {
     }
   };
 
- const stopRecording = () => {
-  if (mediaRecorderRef.current?.state === "recording") {
-    mediaRecorderRef.current.stop();
-  }
+  const stopRecording = () => {
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop();
+    }
 
-  setIsRecording(false);
-  cancelAnimationFrame(animationFrameRef.current);
+    setIsRecording(false);
+    cancelAnimationFrame(animationFrameRef.current);
 
-  if (audioContextRef.current) {
-    audioContextRef.current.close();
-  }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+    }
 
-  if (streamRef.current) {
-    streamRef.current.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-  }
-};
-
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
 
   const resetRecording = () => {
     setAudioBlob(null);
     setAudioData([]);
+    setOnRecord(false);
   };
 
   const sendAudio = () => {
     if (audioBlob && onSend) {
       onSend(audioBlob);
       resetRecording();
+      setOnRecord(false);
     }
   };
 
   return (
-    <Card className="flex-row gap-3 p-3 w-full max-w-full">
-      <div className="w-full h-10 flex items-end gap-[1px] overflow-hidden">
-        {audioData.map((value, index) => (
-          <div
-            key={index}
-            className="flex-1 rounded-sm max-h-full bg-limegreen"
-            style={{
-              height: `${value / 5}px`,
-              width: `2px`,
-            }}
-          />
-        ))}
-      </div>
+    <div
+      className={`flex-row gap-3 flex ${
+        audioData.length > 0 ? "w-full max-w-full" : "w-fit"
+      }`}
+    >
+      {!!audioData.length && (
+        <div className="w-full h-10 flex items-end gap-[1px] overflow-hidden">
+          {audioData.map((value, index) => (
+            <div
+              key={index}
+              className="flex-1 rounded-sm max-h-full bg-limegreen"
+              style={{
+                height: `${value / 5}px`,
+                width: `2px`,
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div className="flex justify-center gap-2">
         {isRecording ? (
           <Button
@@ -144,7 +153,7 @@ const VoiceRecorder = ({ onSend }) => {
           />
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 
