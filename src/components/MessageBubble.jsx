@@ -13,6 +13,7 @@ import {
 import { Modal, ModalContent, ModalBody, ModalFooter } from "@heroui/modal";
 import { Button } from "@heroui/button";
 import getSenderName from "../utils/getSenderName";
+import AudioPlayer from "./AudioPlayer";
 
 function MessageBubble({ message, onReply }) {
   const [previewMedia, setPreviewMedia] = useState(null); // { type: 'image' | 'video', url: string }
@@ -52,7 +53,7 @@ function MessageBubble({ message, onReply }) {
           />
         );
       case "audio":
-        return <audio key={index} src={fileURL} controls className="mt-2" />;
+        return <AudioPlayer key={index} src={fileURL} controls className="mt-2" />;
       case "file":
       default:
         return (
