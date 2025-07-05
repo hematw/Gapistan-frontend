@@ -37,7 +37,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
   }
 
   return (
-    <div className="space-y-3  w-80 max-h-full min-h-full overflow-auto">
+    <div className="space-y-3  sm:w-80 max-h-full min-h-full overflow-auto">
       <div className="relative flex flex-col h-full">
         <Input
           fullWidth

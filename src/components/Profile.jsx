@@ -9,12 +9,13 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { AtSign, Mail, Pen, Phone, Text, User } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import getFileURL from "../utils/getFileURL";
+import { Avatar } from "@heroui/avatar";
 
 const profileSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
-  phone: z.string().min(1, "Phone number is required"),
+  // phone: z.string().min(1, "Phone number is required"),
   email: z.string().email("Invalid email"),
   bio: z.string().max(160, "Bio must be 160 characters or less"),
   profile: z.any(),
@@ -79,7 +80,7 @@ export default function Profile() {
     <Card className="shadow-none max-w-2xl mx-auto mt-10">
       <CardHeader className="flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Profile</h2>
-        <Button onPress={() => setEditMode((prev) => !prev)} variant="outline">
+        <Button onPress={() => setEditMode((prev) => !prev)} color="success" variant="flat">
           {editMode ? "Cancel" : "Edit"}
         </Button>
       </CardHeader>
@@ -92,7 +93,9 @@ export default function Profile() {
         >
           <div className="relative max-w-fit">
             <div className="w-24 h-24 rounded-full overflow-hidden border">
-              <img
+              <Avatar
+                fallback={<User size={36} />}
+                showFallback
                 src={profilePreview || "/default-avatar.png"}
                 alt="Profile"
                 className="w-full h-full object-cover"
@@ -149,7 +152,7 @@ export default function Profile() {
             />
           </div>
 
-          <Input
+          {/* <Input
             startContent={<Phone />}
             {...register("phone")}
             label="Phone"
@@ -157,7 +160,7 @@ export default function Profile() {
             className="w-full"
             errorMessage={errors?.phone?.message}
             isInvalid={!!errors?.phone}
-          />
+          /> */}
 
           <Input
             startContent={<Mail />}

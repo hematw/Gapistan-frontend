@@ -22,7 +22,7 @@ function RightSidebar({ files, selectedChat,handleCall }) {
   }
 
   return (
-    <div className="space-y-4 pr-2 pb-4 min-w-64 overflow-auto hidden lg:block max-h-full">
+    <div className="space-y-4 pb-4 min-w-64 overflow-auto block max-h-full">
       <ChatActions selectedChat={selectedChat} handleCall={handleCall} />
 
       {selectedChat.isGroup && <MemberList selectedChat={selectedChat} />}

@@ -1,7 +1,7 @@
 import { Button } from "@heroui/button";
 import { User } from "@heroui/user";
 import {
-  ArrowLeft,
+  ChevronLeft,
   EllipsisVertical,
   LogOut,
   Pen,
@@ -31,6 +31,7 @@ function ChatHeader({
   setSelectedChat,
   setSelectedUser,
   handleCall,
+  onRightSidebarOpen,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
@@ -166,7 +167,7 @@ function ChatHeader({
 
   const handleReportUser = handleReportSubmit((data) => {
     const reportedUser = getOtherUserId();
-    console.log("oooo 🔰🔰🔰")
+    console.log("oooo 🔰🔰🔰");
     if (!reportedUser) return;
     reportMutation.mutate({
       reportedUser,
@@ -178,7 +179,7 @@ function ChatHeader({
     <div className="flex items-center justify-between p-2 border-b border-default-200">
       <div className="flex items-center gap-2">
         <Button
-          startContent={<ArrowLeft />}
+          startContent={<ChevronLeft />}
           isIconOnly
           variant="fade"
           onPress={() => {
@@ -196,6 +197,7 @@ function ChatHeader({
           classNames={{
             name: "capitalize",
           }}
+          onClick={onRightSidebarOpen}
         />
       </div>
       <Tooltip content="Call" placement="top">

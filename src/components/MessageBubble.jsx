@@ -99,7 +99,7 @@ function MessageBubble({ message, onReply }) {
     >
       <div>
         <div
-          className={`flex gap-2 justify-between items-center ${
+          className={`flex gap-2 items-center ${
             isYou
               ? "flex-row-reverse ml-auto message-you"
               : "rounded-tl-none message-them"

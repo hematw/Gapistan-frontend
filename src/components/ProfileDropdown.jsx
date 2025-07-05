@@ -27,7 +27,7 @@ function ProfileDropdown({ user, onProfileClick }) {
               : `${user?.username[0]}`
           }
           showFallback={true}
-          className="ml-2 min-w-10"
+          className="min-w-10"
         />
       </DropdownTrigger>
       <DropdownMenu aria-label="User Dropdown">

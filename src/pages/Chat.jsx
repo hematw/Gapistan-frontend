@@ -2,7 +2,7 @@ import { Button } from "@heroui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
-import { Bell, Settings, X } from "lucide-react";
+import { X } from "lucide-react";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,17 +10,11 @@ import axiosIns from "../utils/axios";
 import { useAuth } from "../contexts/AuthContext";
 import { addToast } from "@heroui/toast";
 import ChatHeader from "../components/ChatHeader";
-import ProfileDropdown from "../components/ProfileDropdown";
-import { useDisclosure } from "@heroui/use-disclosure";
-import { Modal, ModalBody, ModalContent } from "@heroui/modal";
-import Profile from "../components/Profile";
 import SelectedFilesDrawer from "../components/SelectedFilesDrawer";
-import VoiceRecorder from "../components/VoiceRecorder";
 import NoChat from "../components/NoChat";
 import MessageForm from "../components/MessageForm";
 import ChatTimeline from "../components/ChatTimeline";
 import useChatSocket from "../hooks/useChatSocket";
-import ProfileModal from "../components/ProfileModal";
 import useSeenHandler from "../hooks/useSeenHandler";
 import {
   importPublicKey,
@@ -34,6 +28,9 @@ import CallingModal from "../components/calls/CallingModal";
 import IncomingCallModal from "../components/calls/IncomingCallModal";
 import { useCallHandler } from "../hooks/useCallHandler";
 import getSenderName from "../utils/getSenderName";
+import { Drawer, DrawerContent } from "@heroui/drawer";
+import { useDisclosure } from "@heroui/use-disclosure";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -41,9 +38,14 @@ function Chat() {
   const { user } = useAuth();
   const [selectedUser, setSelectedUser] = useState(null);
   const queryClient = useQueryClient();
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [files, setFiles] = useState([]);
   const [typingMessage, setTypingMessage] = useState(null);
+  const { isOpen, onOpenChange, onOpen } = useDisclosure();
+  const {
+    isOpen: isRightSidebarOpen,
+    onOpenChange: onRightSidebarOpenChange,
+    onOpen: onRightSidebarOpen,
+  } = useDisclosure();
 
   const {
     data: chatsData,
@@ -596,6 +598,8 @@ function Chat() {
     selectedUser,
   ]);
 
+  const isMobile = useIsMobile();
+
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline?.message || chatsErr?.message}</p>;
   }
@@ -606,17 +610,35 @@ function Chat() {
   return (
     <>
       <div className="flex gap-4 p-4 w-full h-screen overflow-auto">
-        <div className="flex w-96 gap-4">
-          <Sidebar />
-          <ChatListPanel
-            chats={chatsData?.chats}
-            isLoading={chatsLoading}
-            setSelectedUser={setSelectedUser}
-            setSelectedChat={setSelectedChat}
-          />
+        <div className="flex gap-4">
+          <Sidebar onOpen={onOpen} />
+          {isMobile ? (
+            <Drawer
+              isOpen={isOpen}
+              onOpenChange={onOpenChange}
+              placement="left"
+              size="sm"
+            >
+              <DrawerContent>
+                <div className="p-6">
+                  <ChatListPanel
+                    chats={chatsData?.chats}
+                    isLoading={chatsLoading}
+                    setSelectedUser={setSelectedUser}
+                    setSelectedChat={setSelectedChat}
+                  />
+                </div>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <ChatListPanel
+              chats={chatsData?.chats}
+              isLoading={chatsLoading}
+              setSelectedUser={setSelectedUser}
+              setSelectedChat={setSelectedChat}
+            />
+          )}
         </div>
-
-        <ProfileModal isOpen={isOpen} onOpenChange={onOpenChange} />
 
         <CallingModal
           isOpen={isCalling}
@@ -631,16 +653,11 @@ function Chat() {
           onReject={rejectCall}
         />
 
-        <div className="w-screen">
-          <div className="flex justify-between items-center mb-4">
+        <div className="w-screen flex flex-col gap-2">
+          <div className="flex justify-between items-center h-[40px]">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
-            <div className="flex items-center gap-2">
-              <Button startContent={<Settings />} isIconOnly radius="full" />
-              <Button startContent={<Bell />} isIconOnly radius="full" />
-              <ProfileDropdown user={user} onProfileClick={onOpen} />
-            </div>
           </div>
-          <div className="flex gap-4 h-[86vh]">
+          <div className="flex gap-4 flex-1">
             <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl">
               {selectedChat || selectedUser ? (
                 <>
@@ -649,6 +666,7 @@ function Chat() {
                     setSelectedChat={setSelectedChat}
                     setSelectedUser={setSelectedUser}
                     handleCall={handleCall}
+                    onRightSidebarOpen={onRightSidebarOpen}
                   />
                   <ChatTimeline
                     chatEndRef={chatEndRef}
@@ -702,14 +720,33 @@ function Chat() {
               )}
             </div>
 
-            {!!selectedChat && (
-              <RightSidebar
-                selectedChat={selectedChat}
-                handleCall={handleCall}
-                // members={members}
-                // files={chatFiles}
-              />
-            )}
+            {!!selectedChat &&
+              (isMobile ? (
+                <Drawer
+                  isOpen={isRightSidebarOpen}
+                  onOpenChange={onRightSidebarOpenChange}
+                  placement="right"
+                  size="sm"
+                >
+                  <DrawerContent>
+                    <div className="p-6 pt-10">
+                      <RightSidebar
+                        selectedChat={selectedChat}
+                        handleCall={handleCall}
+                        // members={members}
+                        // files={chatFiles}
+                      />
+                    </div>
+                  </DrawerContent>
+                </Drawer>
+              ) : (
+                <RightSidebar
+                  selectedChat={selectedChat}
+                  handleCall={handleCall}
+                  // members={members}
+                  // files={chatFiles}
+                />
+              ))}
           </div>
         </div>
       </div>
