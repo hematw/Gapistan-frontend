@@ -6,9 +6,9 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 
 export default function IncomingCallModal({
   isOpen,
-  callerId,
   onAccept,
   onReject,
+  from
 }) {
   const audioRef = useRef(null);
 
@@ -39,8 +39,8 @@ export default function IncomingCallModal({
         >
           <Card className="p-6 border border-default-300">
             <CardHeader className="flex flex-col items-center gap-2">
-              <p className="text-lg text-default-500">Call from</p>
-              <h3 className="text-xl font-semibold mb-6">{callerId}</h3>
+              <p className="text-lg text-default-500">Incoming call from</p>
+              <h3 className="text-xl font-semibold mb-6">{from}</h3>
             </CardHeader>
             <CardBody>
               <div className="flex justify-center gap-4">

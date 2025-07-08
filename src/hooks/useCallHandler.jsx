@@ -18,12 +18,12 @@ export function useCallHandler({ socket, selectedChat }) {
   useEffect(() => {
     if (!socket) return;
 
-    const handleIncomingCall = ({ fromUserId, roomName }) => {
-      setIncomingCall({ fromUserId, roomName });
+    const handleIncomingCall = ({ fromUserId, roomName, from }) => {
+      setIncomingCall({ fromUserId, roomName, from });
     };
 
     const handleCallAccepted = ({ roomName }) => {
-      navigate(`/video-call?userId=${user._id}&roomName=${roomName}`);
+      navigate(`/chat/video-call?userId=${user._id}&roomName=${roomName}`);
     };
 
     const handleCallRejected = () => {
@@ -68,6 +68,11 @@ export function useCallHandler({ socket, selectedChat }) {
     socket.emit("start-call", {
       toUserId: targetUser._id,
       fromUserId: myUser._id,
+      from: selectedChat.isGroup
+        ? ` ${user.firstName ? user.firstName : user.lastName} in ${
+            selectedChat.chatName
+          }`
+        : `${selectedChat.chatName}`,
       roomName,
       isGroup: selectedChat.isGroup,
     });
@@ -120,7 +125,7 @@ export function useCallHandler({ socket, selectedChat }) {
     });
 
     navigate(
-      `/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
+      `/chat/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
     );
     setIncomingCall(null);
     setCallTimeoutId(null);

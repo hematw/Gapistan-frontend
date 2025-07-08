@@ -46,7 +46,7 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
     onOpenChange: onProfileOpenChange,
   } = useDisclosure();
   const { user } = useAuth();
-  const isMobile = useIsMobile()
+  const isMobile = useIsMobile();
 
   const [profilePreview, setProfilePreview] = useState();
   const fileInputRef = useRef();
@@ -93,13 +93,15 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
       <div className="rounded-full bg-limegreen w-10 h-10">
         <img src="/logo.png" alt="" className="w-10 h-10" />
       </div>
-      {isMobile && <Button
-        startContent={<Menu />}
-        radius="full"
-        className="bg-limegreen text-gray-800"
-        onPress={handleChatlistOpen}
-        isIconOnly
-      />}
+      {isMobile && (
+        <Button
+          startContent={<Menu />}
+          radius="full"
+          className="bg-limegreen text-gray-800"
+          onPress={handleChatlistOpen}
+          isIconOnly
+        />
+      )}
       <ProfileDropdown user={user} onProfileClick={onProfileOpen} />
       <ProfileModal isOpen={isProfileOpen} onOpenChange={onProfileOpenChange} />
 
@@ -182,36 +184,11 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
                       selectionMode="multiple"
                       variant="faded"
                       name="members"
-                      renderValue={(items) => (
-                        <div className="flex flex-row gap-2 max-w-72">
-                          {items.map((item) => (
-                            <Chip
-                              classNames={{
-                                content: "flex gap-2 h-auto py-1 px-2",
-                                base: "h-auto rounded-lg",
-                              }}
-                            >
-                              <Avatar
-                                alt={item.data.firstName}
-                                className="flex-shrink-0 shadow-sm"
-                                size="sm"
-                                src={getFileURL(item.data.profile)}
-                                fallback={item.data.firstName?.[0].toUpperCase()}
-                                showFallback={true}
-                                color="success"
-                              />
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">
-                                  {item.data.firstName}
-                                </span>
-                                <span className="text-xs text-gray-500 dark:text-gray-400">
-                                  {item.data.email}
-                                </span>
-                              </div>
-                            </Chip>
-                          ))}
-                        </div>
-                      )}
+                      renderValue={(items) =>
+                        items.map(
+                          (i) => (i.data.firstName || i.data.username) + ", "
+                        )
+                      } 
                     >
                       {(user) => (
                         <SelectItem key={user._id} textValue={user.username}>

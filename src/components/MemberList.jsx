@@ -122,10 +122,10 @@ function MemberList({ selectedChat }) {
                           }}
                           className={`flex gap-3 items-center p-2 rounded-md cursor-pointer transition-all ${
                             isAlreadyMember
-                              ? "bg-gray-800 text-gray-400 cursor-not-allowed opacity-50"
+                              ? " bg-white text-black dark:bg-dark dark:text-white cursor-not-allowed opacity-50"
                               : isSelected
                               ? "bg-limegreen text-black"
-                              : "bg-dark-2 hover:bg-dark-3"
+                              : " hover:bg-dark-3"
                           }`}
                         >
                           <Avatar
@@ -177,7 +177,7 @@ function MemberList({ selectedChat }) {
           )}
         </ModalContent>
       </Modal>
-      <Card className="bg-white dark:bg-dark shadow-lg">
+      <Card className="bg-white text-black dark:bg-dark dark:text-white shadow-lg">
         <CardHeader>
           <div className="w-full flex items-center gap-2">
             <p>{data?.members.length} Members</p>

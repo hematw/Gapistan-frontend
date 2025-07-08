@@ -169,7 +169,7 @@ const DashboardReports = () => {
                           >
                             {resolvingId === report._id
                               ? "Resolving..."
-                              : "Resolve"}
+                              : "Resolve (Ban User)"}
                           </Button>
                         )}
                       </div>

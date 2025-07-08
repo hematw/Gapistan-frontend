@@ -258,6 +258,7 @@ function ChatHeader({
         confirmMessage="Leave Group"
         onConfirm={() => {
           leaveMutation.mutate({ chatId: selectedChat._id });
+          setSelectedChat(null)
           onClose();
         }}
       />

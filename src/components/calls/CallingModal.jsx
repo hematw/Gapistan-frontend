@@ -17,7 +17,7 @@ export default function CallingModal({ isOpen, targetName, onCancel }) {
           exit={{ scale: 0.9 }}
         >
           <Card className="p-6 border border-default-300">
-            <CardHeader className="flex flex-col items-center gap-2">Calling {targetName}...</CardHeader>
+            <CardHeader className="flex flex-col items-center gap-2">Calling to <span className="font-semibold text-xl">{targetName}...</span></CardHeader>
 
             <CardBody>
               <p className="text-gray-500 text-center mb-6">

@@ -2,7 +2,7 @@ import { Button } from "@heroui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import { useSocket } from "../contexts/SocketContext";
-import { X } from "lucide-react";
+import { LayoutDashboard, X } from "lucide-react";
 import ChatListPanel from "../components/ChatListPanel";
 import RightSidebar from "../components/RightSidebar";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +31,7 @@ import getSenderName from "../utils/getSenderName";
 import { Drawer, DrawerContent } from "@heroui/drawer";
 import { useDisclosure } from "@heroui/use-disclosure";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { Link } from "react-router-dom";
 
 function Chat() {
   const { socket, playSound } = useSocket();
@@ -297,7 +298,15 @@ function Chat() {
       setReplyToMessage(null);
       setFiles([]);
     },
-    [socket, user, selectedChat, selectedUser, replyToMessage, chatPublicKeys]
+    [
+      socket,
+      user,
+      selectedChat,
+      selectedUser,
+      replyToMessage,
+      chatPublicKeys,
+      groupChatKeys,
+    ]
   );
 
   const handleSocketResponse = async ({ message, error, data }) => {
@@ -500,7 +509,7 @@ function Chat() {
     return () => {
       isMounted = false;
     };
-  }, [groupChatKeys, queryClient, selectedChat]);
+  }, [queryClient, selectedChat]);
 
   // E2EE: Decrypt incoming messages
   useEffect(() => {
@@ -640,24 +649,30 @@ function Chat() {
           )}
         </div>
 
-        <CallingModal
-          isOpen={isCalling}
-          targetName={"X man"}
-          onCancel={cancelCall}
-        />
+        {selectedChat && (
+          <CallingModal
+            isOpen={isCalling}
+            onCancel={cancelCall}
+            targetName={selectedChat.chatName}
+          />
+        )}
 
         <IncomingCallModal
           isOpen={!!incomingCall}
           callerId={incomingCall?.fromUserId || ""}
           onAccept={acceptCall}
           onReject={rejectCall}
+          from={incomingCall?.from}
         />
 
         <div className="w-screen flex flex-col gap-2">
           <div className="flex justify-between items-center h-[40px]">
             <h1 className="text-2xl fond-semibold">Gapistan</h1>
           </div>
-          <div className="flex gap-4 flex-1">
+          <div
+            className="flex gap-4 flex-1"
+            style={{ maxHeight: "calc(100vh - 72px)" }}
+          >
             <div className="flex flex-col flex-1 bg-white dark:bg-dark shadow-lg rounded-2xl">
               {selectedChat || selectedUser ? (
                 <>

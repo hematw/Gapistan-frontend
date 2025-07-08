@@ -26,6 +26,10 @@ const router = [
         index: true,
         element: <Chat />,
       },
+      {
+        path: "video-call",
+        element: <CallPage />,
+      },
     ],
   },
   {
@@ -48,11 +52,6 @@ const router = [
     path: "/verify-otp",
     element: <VerifyOtp />,
   },
-  {
-    path: "/video-call",
-    element: <CallPage />,
-  },
-
   {
     path: "/dashboard",
     element: <AdminLayout />,
