@@ -10,7 +10,7 @@ import { Spinner } from "@heroui/spinner";
 import { User } from "@heroui/user";
 import getFileURL from "../utils/getFileURL";
 
-function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
+function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
@@ -81,6 +81,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                             setSelectedChat(chat);
                             setSelectedUser(null);
                             setSearch("");
+                            onClose();
                           }}
                         >
                             <User
@@ -126,6 +127,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                             setSelectedUser(user);
                             setSelectedChat(newChat);
                             setSearch("");
+                            onClose()
                           }}
                         >
                           <User
@@ -165,7 +167,10 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser }) {
                 isYou={chat.isYou}
                 unread={chat.unread}
                 lastMessage={chat.lastMessage}
-                onClick={() => setSelectedChat(chat)}
+                onClick={() => {
+                  setSelectedChat(chat)
+                  onClose();
+                }}
                 isOnline={chat.isOnline}
                 profile={getFileURL(chat.profile)}
               />

@@ -41,7 +41,7 @@ function Chat() {
   const queryClient = useQueryClient();
   const [files, setFiles] = useState([]);
   const [typingMessage, setTypingMessage] = useState(null);
-  const { isOpen, onOpenChange, onOpen } = useDisclosure();
+  const { isOpen, onOpenChange, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isRightSidebarOpen,
     onOpenChange: onRightSidebarOpenChange,
@@ -635,6 +635,7 @@ function Chat() {
                     isLoading={chatsLoading}
                     setSelectedUser={setSelectedUser}
                     setSelectedChat={setSelectedChat}
+                    onClose={onClose}
                   />
                 </div>
               </DrawerContent>
