@@ -122,7 +122,7 @@ function Chat() {
         return await importPublicKey(chatPublicKeys[chatId]);
       }
 
-      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);
+      const { data } = await axiosIns.get(`/users/${receiverId}/public-key`);   
       if (chatId) {
         setChatPublicKeys((prev) => ({ ...prev, [chatId]: data.publicKey }));
         // Remove old key if exists
@@ -298,7 +298,16 @@ function Chat() {
       setReplyToMessage(null);
       setFiles([]);
     },
-    [socket, selectedChat, replyToMessage, user._id, selectedUser, handleTypingEvent, groupChatKeys, privateKey, getOtherUserPublicKey]
+    [
+      socket,
+      selectedChat,
+      replyToMessage,
+      user._id,
+      selectedUser,
+      groupChatKeys,
+      privateKey,
+      getOtherUserPublicKey,
+    ]
   );
 
   const handleSocketResponse = async ({ message, error, data }) => {

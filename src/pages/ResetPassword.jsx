@@ -1,6 +1,6 @@
 import { Controller, useForm } from "react-hook-form";
 import { ArrowRight } from "lucide-react";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import PassInput from "../components/PassInput";
 
@@ -124,6 +124,7 @@ function ResetPassword() {
               </span>
             </Button>
           </form>
+          <p className="text-center my-2">Or try sign in again <Link to="/signin" className="text-lime-400 drop-shadow font-semibold">Sign in</Link></p>
         </CardBody>
       </Card>
     </div>

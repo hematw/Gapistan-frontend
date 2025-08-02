@@ -6,7 +6,7 @@ import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
-import { storePrivateKey, deletePrivateKey } from "@/services/keyManager";
+import { storePrivateKey } from "@/services/keyManager";
 import { generateAndSaveRSAKeys } from "../utils/crypto";
 import { getPrivateKey, getRsaPrivateKey } from "../services/keyManager";
 
@@ -99,10 +99,18 @@ export default function AuthProvider({ children }) {
       navigate("/verify-otp");
     } catch (error) {
       console.error("Error", error);
+      if(error.status === 409){
+        return addToast({
+          title: "Email or username already registered",
+          description: "Please try with different email or username.",
+          color: "warning",
+        });
+
+      }
       addToast({
         title: "Register Failed",
         description: "Something went wrong, Please try again later.",
-        color: "primary",
+        color: "danger",
       });
     }
   }
