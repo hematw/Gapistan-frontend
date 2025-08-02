@@ -102,12 +102,12 @@ export default function SignIn() {
                 />
                 <span className="text-gray-600">Remember me</span>
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-lime-600 dark:text-lime-400 hover:underline"
               >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             <Button

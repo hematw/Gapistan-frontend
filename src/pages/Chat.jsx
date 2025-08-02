@@ -298,15 +298,7 @@ function Chat() {
       setReplyToMessage(null);
       setFiles([]);
     },
-    [
-      socket,
-      user,
-      selectedChat,
-      selectedUser,
-      replyToMessage,
-      chatPublicKeys,
-      groupChatKeys,
-    ]
+    [socket, selectedChat, replyToMessage, user._id, selectedUser, handleTypingEvent, groupChatKeys, privateKey, getOtherUserPublicKey]
   );
 
   const handleSocketResponse = async ({ message, error, data }) => {
