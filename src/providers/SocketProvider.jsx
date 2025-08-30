@@ -30,6 +30,7 @@ function SocketProvider({ children }) {
     });
 
     socketInstance.on("connect_error", (err) => {
+      alert(err)
       console.error("Socket connection error:", err);
     });
 

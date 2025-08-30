@@ -158,7 +158,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
               )}
             </Listbox>
           </div>
-        ) : chats.length ? (
+        ) : chats?.length ? (
           <div className="w-full flex flex-col gap-4 mt-4">
             {chats.map((chat, index) => (
               <ChatItem
