@@ -53,7 +53,9 @@ function MessageBubble({ message, onReply }) {
           />
         );
       case "audio":
-        return <AudioPlayer key={index} src={fileURL} controls className="mt-2" />;
+        return (
+          <AudioPlayer key={index} src={fileURL} controls className="mt-2" />
+        );
       case "file":
       default:
         return (
@@ -89,6 +91,13 @@ function MessageBubble({ message, onReply }) {
       console.error("Download failed", err);
     }
   };
+
+  if (
+    !message.decryptedText &&
+    (!Array.isArray(message.files) || message.files.length === 0)
+  ) {
+    return null;
+  }
 
   return (
     <div
