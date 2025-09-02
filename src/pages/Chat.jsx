@@ -246,7 +246,8 @@ function Chat() {
         iv,
         senderId: user?._id,
         chatId: selectedChat?._id,
-        replyTo: replyToMessage?._id,
+        // replyTo: replyToMessage?._id,
+        replyTo: replyToMessage,
         receiverId:
           selectedUser?._id ||
           selectedChat?.members.find((m) => m._id !== user._id)?._id,
@@ -309,7 +310,7 @@ function Chat() {
       getOtherUserPublicKey,
     ]
   );
-
+  
   const handleSocketResponse = async ({ message, error, data }) => {
     console.log(message, error, data);
 
