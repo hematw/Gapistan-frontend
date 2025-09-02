@@ -5,43 +5,31 @@ import {
   DropdownMenu,
   DropdownTrigger,
 } from "@heroui/dropdown";
-import { Avatar } from "@heroui/avatar";
-import { LogOut, User } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import ThemeSwitch from "./ThemeSwitch";
 import { useAuth } from "../contexts/AuthContext";
-import getFileURL from "../utils/getFileURL";
+import { Button } from "@heroui/button";
 
-function ProfileDropdown({ user, onProfileClick }) {
+function ProfileDropdown() {
   const { logout } = useAuth();
   return (
     <Dropdown size="xl">
       <DropdownTrigger>
-        <Avatar
-          name={`${user?.firstName} ${user?.lastName}`}
-          description={`@${user?.username}`}
-          src={user?.profile ? getFileURL(user.profile) : ""}
-          color="success"
-          fallback={
-            user?.firstName
-              ? `${user?.firstName[0]} ${user?.lastName[0]}`
-              : `${user?.username[0]}`
-          }
-          showFallback={true}
-          className="min-w-10"
-        />
+        <Button startContent={<Settings />} isIconOnly radius="full" />
       </DropdownTrigger>
       <DropdownMenu aria-label="User Dropdown">
-        <DropdownItem key="theme-switch">
+        <DropdownItem key="theme-switch" textValue={"theme-switch"}>
           <ThemeSwitch />
         </DropdownItem>
-        <DropdownItem
+        {/* <DropdownItem
           key="profile"
           startContent={<User size={16} />}
           onPress={onProfileClick}
         >
           Profile
-        </DropdownItem>
+        </DropdownItem> */}
         <DropdownItem
+          textValue={"logout"}
           key="logout"
           startContent={<LogOut size={16} />}
           color="danger"
