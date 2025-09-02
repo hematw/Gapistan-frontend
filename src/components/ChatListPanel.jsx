@@ -9,8 +9,9 @@ import { Input } from "@heroui/input";
 import { Spinner } from "@heroui/spinner";
 import { User } from "@heroui/user";
 import getFileURL from "../utils/getFileURL";
+import { addToast } from "@heroui/toast";
 
-function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
+function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose, isLoading }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 
@@ -31,9 +32,10 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
 
   if (searchErr) {
     console.error("Error fetching search results:", searchErr);
-  }
-  if (searchLoading) {
-    console.log("Loading search results...");
+    addToast({
+      title: "Search failed",
+      description: "Couldn't search for chats"
+    })
   }
 
   return (
@@ -50,7 +52,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
             setSearch(e.target.value);
           }}
         />
-        {searchResults || searchLoading ? (
+        {searchResults || searchLoading || isLoading ? (
           <div
             className={`bg-white  mt-4 dark:bg-dark flex-1 min-h-0 overflow-auto flex flex-col gap-4 items-center shadow-lg rounded-2xl`}
           >
@@ -58,7 +60,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
               aria-label="search results"
               className="rounded-xl z-50 mt-4 "
             >
-              {searchLoading ? (
+              {searchLoading || isLoading ? (
                 <ListboxItem
                   aria-label="result"
                   className="rounded-none"

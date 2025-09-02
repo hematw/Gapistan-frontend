@@ -2,6 +2,7 @@ import React from "react";
 import { Accordion, AccordionItem } from "@heroui/accordion";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import getFileURL from "../utils/getFileURL";
+import { Play } from "lucide-react";
 
 function FileSection({ data }) {
   const getShortenedFileName = (file) => {
@@ -33,7 +34,7 @@ function FileSection({ data }) {
                 {data?.media.map((file) => (
                   <div
                     key={file._id}
-                    className="w-16 border rounded-md bg-default-300 shadow aspect-square"
+                    className="w-16 border rounded-md bg-default-300 shadow aspect-square grid place-content-center"
                   >
                     {file.mediaType === "image" && (
                       <img
@@ -43,20 +44,26 @@ function FileSection({ data }) {
                       />
                     )}
                     {file.mediaType === "audio" && (
-                      <audio controls className="w-full mt-2">
-                        <source src={getFileURL(file.path)} type="audio/webm" />
-                        Your browser does not support the audio element.
-                      </audio>
+                      // <audio controls className="w-full mt-2">
+                      //   <source src={getFileURL(file.path)} type="audio/webm" />
+                      //   Your browser does not support the audio element.
+                      // </audio>
+                      <span>
+                        <Play/>
+                      </span>
                     )}
                     {file.mediaType === "video" && (
-                      <video
-                        controls
-                        className="w-full h-auto rounded-md aspect-square"
-                        style={{ maxHeight: "300px" }}
-                      >
-                        <source src={getFileURL(file.path)} type="video/webm" />
-                        Your browser does not support the video tag.
-                      </video>
+                      // <video
+                      //   controls
+                      //   className="w-full h-auto rounded-md aspect-square"
+                      //   style={{ maxHeight: "300px" }}
+                      // >
+                      //   <source src={getFileURL(file.path)} type="video/webm" />
+                      //   Your browser does not support the video tag.
+                      // </video>
+                      <span>
+                        <Play/>
+                      </span>
                     )}
                   </div>
                 ))}
@@ -87,14 +94,13 @@ function FileSection({ data }) {
               })}
             </div>
           </AccordionItem>
-          ) : null;
-          <AccordionItem
+          {/* <AccordionItem
             key="3"
             aria-label="Accordion 1"
             title={(data?.links.length || 0) + " Shared Links"}
           >
             {"ABC"}
-          </AccordionItem>
+          </AccordionItem> */}
         </Accordion>
       </CardBody>
     </Card>

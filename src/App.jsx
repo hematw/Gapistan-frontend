@@ -9,7 +9,8 @@ function App() {
 
   return (
     <Providers>
-      <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense>
+      {/* <Suspense fallback={<div>Loading...</div>}>{routing}</Suspense> */}
+      <div>{routing}</div>
     </Providers>
   );
 }

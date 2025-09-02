@@ -613,9 +613,9 @@ function Chat() {
   if ((chatsErr, chatTimelineErr)) {
     return <p>{chatTimeline?.message || chatsErr?.message}</p>;
   }
-  if (chatsLoading) {
-    return <p className="text-2xl">Loading...</p>;
-  }
+  // if (chatsLoading) {
+  //   return <p className="text-2xl">Loading...</p>;
+  // }
 
   return (
     <>
