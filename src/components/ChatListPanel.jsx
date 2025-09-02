@@ -169,7 +169,7 @@ function ChatListPanel({ chats, setSelectedChat, setSelectedUser, onClose }) {
                 lastMessage={chat.lastMessage}
                 onClick={() => {
                   setSelectedChat(chat)
-                  onClose();
+                  onClose?.();
                 }}
                 isOnline={chat.isOnline}
                 profile={getFileURL(chat.profile)}

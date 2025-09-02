@@ -34,10 +34,10 @@ function ChatItem({
         </Badge>
         <div className="ml-3">
           <p className="line-clamp-1">{chatName}</p>
-          <p className="text-gray-500 text-xs line-clamp-1">
+          {/* <p className="text-gray-500 text-xs line-clamp-1">
             {lastMessage?.isYou ? "You: " : ""}
             {lastMessage?.text}
-          </p>
+          </p> */}
         </div>
         {unread && <Badge color="primary" size="xs" className="ml-auto" />}
       </div>
