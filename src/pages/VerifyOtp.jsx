@@ -6,6 +6,7 @@ import { addToast } from "@heroui/toast";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { InputOtp } from "@heroui/input-otp";
 import { useAuth } from "../contexts/AuthContext";
+import { setupKeysForUser } from "../utils/setupKey.";
 
 export default function VerifyOtp() {
   const {setUser} = useAuth();
@@ -35,7 +36,8 @@ export default function VerifyOtp() {
       localStorage.removeItem("pendingSignUp");
 
       setUser(data.user);
-
+      // Set ECDH and RSA keys if not exits and save them in server
+      await setupKeysForUser(data.user._id);
       addToast({ title: "Signup Successful", color: "success" });
       navigate("/chat");
     } catch (err) {

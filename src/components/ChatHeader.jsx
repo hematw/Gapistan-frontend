@@ -25,6 +25,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axiosIns from "../utils/axios";
 import { Tooltip } from "@heroui/tooltip";
 import { useAuth } from "../contexts/AuthContext";
+import { addToast } from "@heroui/toast";
 
 function ChatHeader({
   selectedChat,
@@ -136,9 +137,20 @@ function ChatHeader({
     },
     onSuccess: () => {
       onReportClose();
+      addToast({
+        title: "User Reported",
+        message: "Thank you for your report. We will review it shortly.",
+        type: "success",
+      }
+      )
     },
     onError: (error) => {
       console.error("Error reporting user:", error);
+      addToast({
+        title: "Error",
+        message: "There was an error reporting the user. Please try again.",
+        type: "error",
+      });
     },
   });
 

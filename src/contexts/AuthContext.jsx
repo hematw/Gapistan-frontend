@@ -4,20 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import axios, { isAxiosError } from "axios";
 import { createContext, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import {  setupKeysForUser } from "../utils/setupKey.";
 
-import { generateECDHKeyPair, exportPublicKey } from "@/utils/crypto";
-import { storePrivateKey } from "@/services/keyManager";
-import { generateAndSaveRSAKeys } from "../utils/crypto";
-import { getPrivateKey, getRsaPrivateKey } from "../services/keyManager";
 
-async function setupKeysAndSendToServer(userId) {
-  const keyPair = await generateECDHKeyPair();
-  const publicJwk = await exportPublicKey(keyPair.publicKey);
-
-  await storePrivateKey(userId, keyPair.privateKey);
-
-  await axiosIns.put("/users/public-key", { publicKey: publicJwk });
-}
 
 const AuthContext = createContext({
   signIn: () => Promise.resolve(),
@@ -60,16 +49,7 @@ export default function AuthProvider({ children }) {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      const aesKey = await getPrivateKey(data.user._id);
-      const rsaKey = await getRsaPrivateKey(data.user._id);
-
-      if (!aesKey) {
-        await setupKeysAndSendToServer(data.user._id);
-      }
-
-      if (!rsaKey) {
-        await generateAndSaveRSAKeys(data.user._id);
-      }
+      await setupKeysForUser(data.user._id);
       addToast({
         title: "Success",
         description: "Login successful!",
