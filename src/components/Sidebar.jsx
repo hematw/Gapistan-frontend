@@ -102,7 +102,26 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
           isIconOnly
         />
       )}
-      <ProfileDropdown user={user} onProfileClick={onProfileOpen} />
+      <Button
+        size="icon"
+        radius="full"
+        onPress={onProfileOpen}
+        startContent={
+          <Avatar
+            name={`${user?.firstName} ${user?.lastName}`}
+            description={`@${user?.username}`}
+            src={user?.profile ? getFileURL(user.profile) : ""}
+            color="success"
+            fallback={
+              user?.firstName
+                ? `${user?.firstName[0]} ${user?.lastName[0]}`
+                : `${user?.username[0]}`
+            }
+            showFallback={true}
+            className="min-w-10"
+          />
+        }
+      ></Button>
       <ProfileModal isOpen={isProfileOpen} onOpenChange={onProfileOpenChange} />
 
       <Dropdown aria-label="dropdown for plus button">
@@ -188,7 +207,7 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
                         items.map(
                           (i) => (i.data.firstName || i.data.username) + ", "
                         )
-                      } 
+                      }
                     >
                       {(user) => (
                         <SelectItem key={user._id} textValue={user.username}>
@@ -230,7 +249,7 @@ function Sidebar({ onOpen: handleChatlistOpen }) {
         </ModalContent>
       </Modal>
       <div className="mt-auto">
-        <Button startContent={<Settings />} isIconOnly radius="full" />
+        <ProfileDropdown user={user} onProfileClick={onProfileOpen} />
       </div>
     </Card>
   );

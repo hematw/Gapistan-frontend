@@ -23,7 +23,8 @@ export function useCallHandler({ socket, selectedChat }) {
     };
 
     const handleCallAccepted = ({ roomName }) => {
-      navigate(`/chat/video-call?userId=${user._id}&roomName=${roomName}`);
+      // navigate(`/chat/video-call?userId=${user._id}&roomName=${roomName}`);
+      navigate(`/chat/video-call?userId=${user.firstName ? user.firstName + " "+ user.lastName : user.username}&roomName=${roomName}`);
     };
 
     const handleCallRejected = () => {
@@ -125,7 +126,8 @@ export function useCallHandler({ socket, selectedChat }) {
     });
 
     navigate(
-      `/chat/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
+      // `/chat/video-call?userId=${user._id}&roomName=${incomingCall.roomName}`
+      `/chat/video-call?userId=${user.firstName ? user.firstName + " "+ user.lastName : user.username}&roomName=${incomingCall.roomName}`
     );
     setIncomingCall(null);
     setCallTimeoutId(null);
